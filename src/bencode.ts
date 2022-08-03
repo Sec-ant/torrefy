@@ -12,7 +12,8 @@ export type BData =
   | BList
   | BObject
   | BMap
-  | undefined;
+  | undefined
+  | null;
 
 class BEncoderUnderlyingSource {
   #textEncoder = new TextEncoder();
