@@ -6,6 +6,7 @@ export interface BObject {
 export type BMap = Map<ArrayBuffer | string, BData>;
 export type BData =
   | number
+  | bigint
   | string
   | ArrayBuffer
   | BList
@@ -34,19 +35,18 @@ class BEncoderUnderlyingSource {
     if (typeof data === "undefined" || data === null) {
       return;
     }
-    if (typeof data === "number") {
-      const maxLo = 0x80000000;
-      const hi = (data / maxLo) << 0;
-      const lo = data % maxLo << 0;
-      const val = hi * maxLo + lo;
-      controller.enqueue(this.#textEncoder.encode(`i${val}e`));
-      if (val !== data) {
+    } else if (typeof data === "number") {
+      const integer = Math.round(data);
+      controller.enqueue(this.#textEncoder.encode(`i${integer}e`));
+      if (integer !== data) {
         console.warn(
           `WARNING: Possible data corruption detected with value "${data}":`,
-          `Bencoding only defines support for integers, value was converted to "${val}"`
+          `Bencoding only defines support for integers, value was converted to "${integer}"`
         );
         console.trace();
       }
+    } else if (typeof data === "bigint") {
+      controller.enqueue(this.#textEncoder.encode(`i${data}e`));
     } else if (typeof data === "string") {
       const byteData = this.#textEncoder.encode(data);
       const byteLength = byteData.byteLength;
