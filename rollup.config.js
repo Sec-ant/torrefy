@@ -35,7 +35,7 @@ export default [
   // ES module (for bundlers) build
   {
     input: "src/index.ts",
-    external: ["workbox-streams"],
+    external: ["workbox-streams", "uuid"],
     output: [
       { file: pkg.module, format: "es", sourcemap: true },
     ],
