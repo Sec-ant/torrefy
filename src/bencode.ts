@@ -33,9 +33,9 @@ declare global {
 class BEncoderUnderlyingSource {
   textEncoder = new TextEncoder();
   textDecoder = new TextDecoder();
-  buffL = this.textEncoder.encode("l");
-  buffD = this.textEncoder.encode("d");
-  buffE = this.textEncoder.encode("e");
+  buffL = new Uint8Array([108]);
+  buffD = new Uint8Array([100]);
+  buffE = new Uint8Array([101]);
   data: BData;
   hooks: EncodeHooks;
   constructor(data: BData, hooks: EncodeHooks) {
