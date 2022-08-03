@@ -1,4 +1,5 @@
 import { getSortedIndex } from "./utils";
+
 export type BList = BData[];
 export interface BObject {
   [k: string]: BData;
@@ -16,6 +17,19 @@ export type BData =
   | undefined
   | null;
 
+export type EncodeHookHandler = (result: IteratorResult<Uint8Array>) => void;
+
+export interface EncodeHooks {
+  [k: string]: EncodeHookHandler;
+}
+const isProxifiedController = Symbol("isProxifiedController");
+
+declare global {
+  interface ReadableStreamDefaultController {
+    [isProxifiedController]: boolean | undefined;
+  }
+}
+
 class BEncoderUnderlyingSource {
   #textEncoder = new TextEncoder();
   #textDecoder = new TextDecoder();
@@ -23,8 +37,10 @@ class BEncoderUnderlyingSource {
   #buffD = this.#textEncoder.encode("d");
   #buffE = this.#textEncoder.encode("e");
   #data: BData;
-  constructor(data: BData) {
+  #hooks: EncodeHooks;
+  constructor(data: BData, hooks: EncodeHooks) {
     this.#data = data;
+    this.#hooks = hooks;
   }
   start(controller: ReadableStreamController<Uint8Array>) {
     this.#encode(this.#data, controller);
@@ -87,7 +103,20 @@ class BEncoderUnderlyingSource {
           continue;
         }
         this.#encode(key, controller);
-        this.#encode(value, controller);
+        if (
+          typeof key === "string" &&
+          key in this.#hooks &&
+          !controller[isProxifiedController]
+        ) {
+          const hookHandler = this.#hooks[key];
+          this.#encode(value, proxifyController(controller, hookHandler));
+          hookHandler({
+            value: undefined,
+            done: true,
+          });
+        } else {
+          this.#encode(value, controller);
+        }
       }
       controller.enqueue(this.#buffE);
     } else {
@@ -99,13 +128,47 @@ class BEncoderUnderlyingSource {
           continue;
         }
         this.#encode(key, controller);
-        this.#encode(value, controller);
+        if (key in this.#hooks && !controller[isProxifiedController]) {
+          const hookHandler = this.#hooks[key];
+          this.#encode(value, proxifyController(controller, hookHandler));
+          hookHandler({
+            value: undefined,
+            done: true,
+          });
+        } else {
+          this.#encode(value, controller);
+        }
       }
       controller.enqueue(this.#buffE);
     }
   }
 }
 
-export function encode(data: BData) {
-  return new ReadableStream(new BEncoderUnderlyingSource(data));
+export function encode(data: BData, hooks: EncodeHooks = {}) {
+  return new ReadableStream(new BEncoderUnderlyingSource(data, hooks));
+}
+
+function proxifyController(
+  controller: ReadableStreamDefaultController<Uint8Array>,
+  hookHandler: EncodeHookHandler
+) {
+  return new Proxy(controller, {
+    get: function (target, prop, receiver) {
+      if (prop === "enqueue") {
+        return ((chunk?: Uint8Array | undefined) => {
+          target.enqueue(chunk);
+          if (chunk !== undefined) {
+            hookHandler({
+              value: chunk,
+              done: false,
+            });
+          }
+        }).bind(target);
+      } else if (prop === isProxifiedController) {
+        return true;
+      } else {
+        return Reflect.get(target, prop, receiver);
+      }
+    },
+  });
 }
