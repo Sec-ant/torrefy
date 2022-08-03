@@ -336,12 +336,17 @@ export type Info<T extends TorrentType> = T extends TorrentType.V1
  * Create a torrent
  * @param files
  * @param opts
+ * @param onProgress
+ * @returns
  */
 export async function create(
   files: File[],
   opts: TorrentOptions = {},
   onProgress: (current: number, total: number) => any = (_, __) => {}
-): Promise<{ torrentStream: ReadableStream<Uint8Array>; metaInfo: BObject }> {
+): Promise<{
+  torrentStream: ReadableStream<Uint8Array>;
+  metaInfo: MetaInfo<TorrentType>;
+}> {
   if (files.length === 0) {
     throw new Error("empty file list");
   }
@@ -364,12 +369,6 @@ export async function create(
     sortFiles,
     type,
   }: InternalTorrentOptions = { ...defaultTorrentOptions, ...opts };
-
-  announceList = sanitizeAnnounceList(announceList);
-
-  if (typeof announce === "undefined" && typeof announceList !== "undefined") {
-    announce = announceList[0][0];
-  }
 
   const blocksPerPiece = pieceLength / blockLength;
 
@@ -398,6 +397,12 @@ export async function create(
   }, 0);
   let PAD_LEAF: Uint8Array;
 
+  announceList = sanitizeAnnounceList(announceList);
+
+  if (typeof announce === "undefined" && typeof announceList !== "undefined") {
+    announce = announceList[0][0];
+  }
+
   const metaInfoBase: MetaInfoBase = {
     ...(announce && { announce: announce }),
     ...(announceList && { "announce-list": announceList }),
@@ -405,6 +410,8 @@ export async function create(
     ...(addCreatedBy && { "created by": CREATED_BY }),
     ...(addCreationDate && { "creation date": (Date.now() / 1000) >> 0 }),
   };
+
+  let metaInfo: MetaInfo<TorrentType>;
 
   /* Construct Meta Info */
   // v1
@@ -442,7 +449,7 @@ export async function create(
       );
       v1PieceReadableStream = v1Hash(concatenatedFileReadableStream);
     }
-    const metaInfo: MetaInfo<TorrentType.V1> = {
+    metaInfo = {
       ...metaInfoBase,
       info: {
         ...(files.length > 1
@@ -469,11 +476,7 @@ export async function create(
         pieces: await new Response(v1PieceReadableStream).arrayBuffer(),
         ...(isPrivate && { private: 1 }),
       },
-    };
-    return {
-      torrentStream: encode(metaInfo),
-      metaInfo,
-    };
+    } as MetaInfo<TorrentType.V1>;
   }
   // v2
   else if (type === TorrentType.V2) {
@@ -489,7 +492,7 @@ export async function create(
       })
     );
 
-    const metaInfo: MetaInfo<TorrentType.V2> = {
+    metaInfo = {
       ...metaInfoBase,
       info: {
         ["file tree"]: fileTree,
@@ -499,11 +502,7 @@ export async function create(
         ...(isPrivate && { private: 1 }),
       },
       ...(pieceLayers.size > 0 && { "piece layers": pieceLayers }),
-    };
-    return {
-      torrentStream: encode(metaInfo),
-      metaInfo,
-    };
+    } as MetaInfo<TorrentType.V2>;
   }
   // hybrid
   else if (type === TorrentType.HYBRID) {
@@ -539,7 +538,7 @@ export async function create(
 
     files = padFiles(files, pieceLength, commonDir);
 
-    const metaInfo: MetaInfo<TorrentType.HYBRID> = {
+    metaInfo = {
       ...metaInfoBase,
       info: {
         ["file tree"]: fileTree,
@@ -569,14 +568,15 @@ export async function create(
         ...(isPrivate && { private: 1 }),
       },
       ...(pieceLayers.size > 0 && { "piece layers": pieceLayers }),
-    };
-    return {
-      torrentStream: encode(metaInfo),
-      metaInfo,
-    };
+    } as MetaInfo<TorrentType.HYBRID>;
   } else {
     throw new Error(`torrent type ${type} is not supported`);
   }
+
+  return {
+    torrentStream: encode(metaInfo),
+    metaInfo,
+  };
 
   async function v2Work(
     fileNode: FileNodeValue,
