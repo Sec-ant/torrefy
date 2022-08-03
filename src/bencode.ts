@@ -5,6 +5,7 @@ export interface BObject {
 }
 export type BMap = Map<ArrayBuffer | string, BData>;
 export type BData =
+  | boolean
   | number
   | bigint
   | string
@@ -36,6 +37,8 @@ class BEncoderUnderlyingSource {
     if (typeof data === "undefined" || data === null) {
       return;
     }
+    if (typeof data === "boolean") {
+      this.#encode(data ? 1 : 0, controller);
     } else if (typeof data === "number") {
       const integer = Math.round(data);
       controller.enqueue(this.#textEncoder.encode(`i${integer}e`));
