@@ -36,9 +36,7 @@ export default [
   {
     input: "src/index.ts",
     external: ["workbox-streams", "uuid"],
-    output: [
-      { file: pkg.module, format: "es", sourcemap: true },
-    ],
+    output: [{ file: pkg.module, format: "es", sourcemap: true }],
     plugins,
   },
 ];
