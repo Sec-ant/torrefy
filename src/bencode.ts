@@ -22,6 +22,11 @@ export type EncodeHookHandler = (result: IteratorResult<Uint8Array>) => void;
 export interface EncodeHooks {
   [k: string]: EncodeHookHandler;
 }
+
+export const BUFF_L = new Uint8Array([108]);
+export const BUFF_D = new Uint8Array([100]);
+export const BUFF_E = new Uint8Array([101]);
+
 const isProxifiedController = Symbol("isProxifiedController");
 
 declare global {
@@ -33,9 +38,6 @@ declare global {
 class BEncoderUnderlyingSource {
   textEncoder = new TextEncoder();
   textDecoder = new TextDecoder();
-  buffL = new Uint8Array([108]);
-  buffD = new Uint8Array([100]);
-  buffE = new Uint8Array([101]);
   data: BData;
   hooks: EncodeHooks;
   constructor(data: BData, hooks: EncodeHooks) {
@@ -78,13 +80,13 @@ class BEncoderUnderlyingSource {
       controller.enqueue(this.textEncoder.encode(`${byteLength}:`));
       controller.enqueue(byteData);
     } else if (Array.isArray(data)) {
-      controller.enqueue(this.buffL);
+      controller.enqueue(BUFF_L);
       for (let member of data) {
         this.encode(member, controller);
       }
-      controller.enqueue(this.buffE);
+      controller.enqueue(BUFF_E);
     } else if (data instanceof Map) {
-      controller.enqueue(this.buffD);
+      controller.enqueue(BUFF_D);
       const keys: (string | ArrayBuffer)[] = [];
       for (const key of data.keys()) {
         keys.splice(
@@ -118,9 +120,9 @@ class BEncoderUnderlyingSource {
           this.encode(value, controller);
         }
       }
-      controller.enqueue(this.buffE);
+      controller.enqueue(BUFF_E);
     } else {
-      controller.enqueue(this.buffD);
+      controller.enqueue(BUFF_D);
       const keys = Object.keys(data).sort();
       for (const key of keys) {
         const value = data[key];
@@ -139,7 +141,7 @@ class BEncoderUnderlyingSource {
           this.encode(value, controller);
         }
       }
-      controller.enqueue(this.buffE);
+      controller.enqueue(BUFF_E);
     }
   }
 }
