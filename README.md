@@ -11,12 +11,33 @@
 ### Basic usage
 
 ```ts
+import { create, encode } from "torrefy";
+
+// create a test file
+const testFile = new File(
+  ["Hello world. This is the test file content."],
+  "testfile.txt"
+);
+
+// calculate (hash) the meta info of the test file
+const metaInfo = await create([testFile]);
+
+// bencode meta info into a readable stream
+const torrentStream = encode(metaInfo);
+
+// consume the readable stream as an array buffer
+const torrentBinary = await new Response(torrentStream).arrayBuffer();
+```
+
+### Advance usage
+
+```ts
 import {
   create,
   encode,
   CommonPieceLength,
   TorrentType,
-  TorrentOptionsV1,
+  TorrentOptions,
   OnProgress,
   ArrayKeyedMap,
   useArrayBufferPromiseHook,
@@ -30,7 +51,7 @@ const testFile = new File(
 );
 
 // v1 torrent options
-const options: TorrentOptionsV1 = {
+const options: TorrentOptions<TorrentType.V1> = {
   type: TorrentType.V1,
   announceList: [
     ["udp://tracker.opentrackr.org:1337/announce"],
