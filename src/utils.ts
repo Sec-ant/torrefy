@@ -25,11 +25,29 @@ export function getSortedIndex<T, V>(
   return low;
 }
 
-import { FileNodeValue, DirNodeValue, FileTree } from "./create";
+/**
+ * Sort iterable into a sorted array
+ * @param iterable
+ * @param compareFunction
+ * @returns sorted array
+ */
+export function iterableSort<T>(
+  iterable: IterableIterator<T>,
+  compareFunction: (a: T, b: T) => number
+) {
+  const sorted: T[] = [];
+  for (const item of iterable) {
+    sorted.splice(getSortedIndex(sorted, item, compareFunction), 0, item);
+  }
+  return sorted;
+}
+
+import { FileNodeValue, DirNodeValue, FileTree } from "./create.js";
 type FileEntry = [key: string, value: FileNodeValue];
 type DirEntry = [key: string, value: Entries];
 type Entries = (FileEntry | DirEntry)[];
 type FileNodeMap = WeakMap<FileNodeValue, File>;
+
 /**
  * Parse an array of files into a file tree
  * and return the sorted file nodes
@@ -155,24 +173,28 @@ export function nextPowerOfTwo(number: number) {
   return 1 << (32 - Math.clz32(number - 1));
 }
 
-import { AnnounceList } from "./create";
-export function sanitizeAnnounceList(
-  announceList: AnnounceList | undefined
-): AnnounceList | undefined {
+/**
+ * Collapse announce list
+ * @param announceList
+ * @returns collapsed announce list
+ */
+export function collapseAnnounceList(
+  announceList: string[][] | undefined
+): string[][] | undefined {
   if (typeof announceList === "undefined") {
     return undefined;
   }
-  const sanitizedAnnounceList: AnnounceList = [];
+  const collapsedAnnounceList: string[][] = [];
   for (const tier of announceList) {
     if (tier.length === 0) {
       continue;
     }
-    sanitizedAnnounceList.push(tier);
+    collapsedAnnounceList.push(tier);
   }
-  if (sanitizedAnnounceList.length === 0) {
+  if (collapsedAnnounceList.length === 0) {
     return undefined;
   }
-  return sanitizedAnnounceList;
+  return collapsedAnnounceList;
 }
 
 /**
@@ -244,7 +266,14 @@ export function padFiles(
   return newFiles;
 }
 
-export function setName(
+/**
+ * Decide torrent name
+ * @param name
+ * @param commonDir
+ * @param files
+ * @returns name
+ */
+export function decideName(
   name: string | undefined,
   commonDir: string | undefined,
   files: File[]
@@ -255,4 +284,13 @@ export function setName(
     name ??= commonDir || v4();
   }
   return name;
+}
+
+/**
+ * Calculate piece length from file size
+ * @param fileSize
+ * @returns
+ */
+export function calculatePieceLength(fileSize: number, blockLength: number) {
+  return Math.max(blockLength, nextPowerOfTwo(fileSize >>> 10));
 }

@@ -1,3 +1,3 @@
-export * from "./utils";
-export * from "./bencode";
-export * from "./create";
+export * from "./utils.js";
+export * from "./encode.js";
+export * from "./create.js";
