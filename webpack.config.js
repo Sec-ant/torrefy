@@ -9,7 +9,7 @@ const __dirname = dirname(__filename);
 /**
  *
  * @param {"esm"|"umd"} type
- * @returns
+ * @returns { webpack.Configuration } config
  */
 function getConfig(type) {
   return {
@@ -55,7 +55,9 @@ function getConfig(type) {
             filename: "[name].umd.js",
             path: resolve(__dirname, "dist"),
             library: {
-              name: "torrefy",
+              name: pkg.name.replace(/-([a-z])/g, function (g) {
+                return g[1].toUpperCase();
+              }),
               type: "umd",
             },
           }

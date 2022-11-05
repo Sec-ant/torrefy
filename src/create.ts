@@ -120,7 +120,7 @@ interface TorrentOptionsV1 extends TorrentOptionsBase {
   /**
    * torrent type: V1
    */
-  type?: TorrentType.V1;
+  type: TorrentType.V1;
 }
 
 /**
@@ -134,7 +134,7 @@ interface TorrentOptionsV2 extends TorrentOptionsBase {
   /**
    * torrent type: V2
    */
-  type?: TorrentType.V2;
+  type: TorrentType.V2;
 }
 
 /**
@@ -148,7 +148,7 @@ interface TorrentOptionsHybrid extends TorrentOptionsBase {
   /**
    * torrent type: HYBRID
    */
-  type?: TorrentType.HYBRID;
+  type: TorrentType.HYBRID;
 }
 
 /**
@@ -496,20 +496,21 @@ export const DEFAULT_BLOCK_LENGTH = 1 << 14;
 /**
  * common piece lengths
  */
-export const COMMON_PIECE_LENGTH = {
-  "16KB": 1 << 14,
-  "32KB": 1 << 15,
-  "64KB": 1 << 16,
-  "128KB": 1 << 17,
-  "256KB": 1 << 18,
-  "512KB": 1 << 19,
-  "1MB": 1 << 20,
-  "2MB": 1 << 21,
-  "4MB": 1 << 22,
-  "8MB": 1 << 23,
-  "16MB": 1 << 24,
-  "32MB": 1 << 25,
-};
+
+export enum CommonPieceLength {
+  "16KB" = 1 << 14,
+  "32KB" = 1 << 15,
+  "64KB" = 1 << 16,
+  "128KB" = 1 << 17,
+  "256KB" = 1 << 18,
+  "512KB" = 1 << 19,
+  "1MB" = 1 << 20,
+  "2MB" = 1 << 21,
+  "4MB" = 1 << 22,
+  "8MB" = 1 << 23,
+  "16MB" = 1 << 24,
+  "32MB" = 1 << 25,
+}
 
 /**
  * 32-byte-zeros
@@ -528,10 +529,10 @@ const defaultTorrentOptionsV1: InternalTorrentOptions<TorrentType.V1> = {
   type: TorrentType.V1,
   addCreatedBy: true,
   addCreationDate: true,
-  addPaddingFiles: true,
+  addPaddingFiles: false,
   blockLength: DEFAULT_BLOCK_LENGTH,
   sortFiles: true,
-  isPrivate: true,
+  isPrivate: false,
 };
 
 /**
@@ -543,7 +544,7 @@ const defaultTorrentOptionsV2: InternalTorrentOptions<TorrentType.V2> = {
   addCreationDate: true,
   blockLength: DEFAULT_BLOCK_LENGTH,
   metaVersion: CURRENT_META_VERSION,
-  isPrivate: true,
+  isPrivate: false,
 };
 
 /**
@@ -556,8 +557,13 @@ const defaultTorrentOptionsHybrid: InternalTorrentOptions<TorrentType.HYBRID> =
     addCreationDate: true,
     blockLength: DEFAULT_BLOCK_LENGTH,
     metaVersion: CURRENT_META_VERSION,
-    isPrivate: true,
+    isPrivate: false,
   };
+
+export type OnProgress = (
+  current: number,
+  total: number
+) => void | Promise<void>;
 
 /**
  * Create a torrent, returns meta info
@@ -568,8 +574,8 @@ const defaultTorrentOptionsHybrid: InternalTorrentOptions<TorrentType.HYBRID> =
  */
 export async function create(
   files: File[],
-  opts: TorrentOptions = {},
-  onProgress: (current: number, total: number) => any = (_, __) => {}
+  opts: TorrentOptions = { type: TorrentType.V1 },
+  onProgress: OnProgress = (_, __) => {}
 ): Promise<MetaInfo<TorrentType>> {
   // empty file list will throw error
   if (files.length === 0) {
@@ -589,13 +595,6 @@ export async function create(
       break;
     case TorrentType.HYBRID:
       iOpts = { ...defaultTorrentOptionsHybrid, ...opts };
-      break;
-    default:
-      iOpts = {
-        ...defaultTorrentOptionsV1,
-        ...opts,
-        type: TorrentType.V1,
-      };
       break;
   }
 

@@ -1,5 +1,5 @@
 import ArrayKeyedMap from "array-keyed-map";
-export { ArrayKeyedMap };
+export { default as ArrayKeyedMap } from "array-keyed-map";
 import { iterableSort } from "./utils.js";
 /**
  * bencode list
@@ -63,7 +63,7 @@ export const BUFF_E = new Uint8Array([101]);
 /**
  * bencode readablestream underlying source
  */
-class BEncoderUnderlyingSource {
+class BEncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
   textEncoder = new TextEncoder();
   textDecoder = new TextDecoder();
   data: BData;
