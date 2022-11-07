@@ -1,20 +1,20 @@
-import { BUFF_D, BUFF_E, BUFF_L } from "./encode.js";
+import { BData, BList, BUFF_D, BUFF_E, BUFF_L } from "./encode.js";
 
 enum TokenType {
-  Integer,
+  Integer = "Integer",
 
-  ByteString,
+  ByteString = "ByteString",
 
-  ListStart,
-  ListEnd,
+  ListStart = "ListStart",
+  ListEnd = "ListEnd",
 
-  DictionaryStart,
-  DictionaryEnd,
+  DictionaryStart = "DictionaryStart",
+  DictionaryEnd = "DictionaryEnd",
 }
 
 interface IntegerToken {
   type: TokenType.Integer;
-  value?: Uint8Array;
+  value: Uint8Array;
 }
 
 interface ByteStringToken {
@@ -72,6 +72,8 @@ const BYTE_0 = 48;
 
 const BYTE_9 = 57;
 
+const BYTE_MINUS = 45;
+
 class TokenizerTransformer implements Transformer<Uint8Array, Token> {
   endStack: (TokenType.DictionaryEnd | TokenType.ListEnd)[] = [];
   token: Token | null = null;
@@ -98,7 +100,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
     controller: TransformStreamDefaultController<Token>
   ) {
     // empty chunk
-    if (chunk.length === 0) {
+    if (chunk.byteLength === 0) {
       return;
     }
     // check token type
@@ -108,6 +110,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
       if (firstByte === BYTE_I) {
         this.token = {
           type: TokenType.Integer,
+          value: new Uint8Array(),
         };
       }
       // bytestring length
@@ -259,6 +262,124 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
 
 export function makeTokenizer() {
   return new TransformStream(new TokenizerTransformer());
+}
+
+export async function parse(tokenizerReadableStream: ReadableStream<Token>) {
+  const contextStack: BData[] = [];
+  const tokenStreamReader = tokenizerReadableStream.getReader();
+  let isDictionaryKey = true;
+  while (true) {
+    const { done, value: token } = await tokenStreamReader.read();
+    if (done) {
+      break;
+    }
+    const currentContext = contextStack.at(-1);
+    // current context: global
+    if (contextStack.length === 0) {
+      if (token.type === TokenType.Integer) {
+        contextStack.push(parseInteger(token.value));
+      } else if (token.type === TokenType.ByteString) {
+        contextStack.push(parseByteString(token.value));
+      } else if (token.type === TokenType.DictionaryStart) {
+        contextStack.push(Object.create(null));
+      } else if (token.type === TokenType.ListStart) {
+        contextStack.push([]);
+      } else {
+        throw new SyntaxError(`Unexpected token: ${token}`);
+      }
+    }
+    // current context: list
+    else if (Array.isArray(currentContext)) {
+      if (token.type === TokenType.Integer) {
+        currentContext.push(parseInteger(token.value));
+      } else if (token.type === TokenType.ByteString) {
+        currentContext.push(parseByteString(token.value));
+      } else if (token.type === TokenType.DictionaryStart) {
+        const nextContext = Object.create(null);
+        currentContext.push(nextContext);
+        contextStack.push(nextContext);
+      } else if (token.type === TokenType.ListStart) {
+        const nextContext: BList = [];
+        currentContext.push(nextContext);
+        contextStack.push([]);
+      } else if (token.type === TokenType.ListEnd) {
+        contextStack.pop();
+      } else {
+        throw new SyntaxError(`Unexpected token: ${token}`);
+      }
+    }
+    // current context: dictionary
+    else if (typeof currentContext === "object") {
+      if (isDictionaryKey) {
+      }
+    } else {
+      throw new SyntaxError(`Unexpected token: ${token}`);
+    }
+  }
+}
+
+function parseInteger(tokenValue: Uint8Array) {
+  let integer: number | bigint = 0;
+  let isPositive = true;
+  for (const [index, byte] of tokenValue.entries()) {
+    // branch order is important!
+    // handle negative sign
+    if (index === 0 && byte === BYTE_MINUS) {
+      isPositive = false;
+      continue;
+    }
+    // negative zero is not allowed
+    if (index === 1 && !isPositive && byte === BYTE_0) {
+      throw new SyntaxError("Negative zero is not a valid integer");
+    }
+    // leading zeros are not allowed
+    if (index === 1 && integer === 0) {
+      throw new SyntaxError("Leading zeros are not allowed");
+    }
+    // not a digit or negative sign
+    if (!isDigit(byte)) {
+      throw new SyntaxError(`Unexpected byte: ${byte}`);
+    }
+    const byteNumber = byte - BYTE_0;
+    // handle immediate overflow
+    if (
+      isPositive &&
+      typeof integer === "number" &&
+      integer > (Number.MAX_SAFE_INTEGER - byteNumber) / 10
+    ) {
+      integer = BigInt(integer);
+    }
+    // handle immediate underflow
+    else if (
+      !isPositive &&
+      typeof integer === "number" &&
+      integer < (Number.MIN_SAFE_INTEGER + byteNumber) / 10
+    ) {
+      integer = BigInt(integer);
+    }
+    // handle number
+    if (typeof integer === "number") {
+      if (isPositive) {
+        integer = integer * 10 + byteNumber;
+      } else {
+        integer = integer * 10 - byteNumber;
+      }
+    }
+    // handle big int
+    else {
+      if (isPositive) {
+        integer = integer * 10n + BigInt(byteNumber);
+      } else {
+        integer = integer * 10n - BigInt(byteNumber);
+      }
+    }
+  }
+  return integer;
+}
+
+function parseByteString(tokenValue: Uint8Array) {
+  const textDecoder = new TextDecoder();
+  return textDecoder.decode(tokenValue);
 }
 
 function isDigit(byte: number) {
