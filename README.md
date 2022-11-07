@@ -37,7 +37,7 @@ const torrentStream = encode(metaInfo);
 const [torrentStream1, torrentStream2] = torrentStream.tee();
 
 // consume the first readable stream as an array buffer
-const torrentBinary = await new Response(torrentStream).arrayBuffer();
+const torrentBinary = await new Response(torrentStream1).arrayBuffer();
 
 // decode the second readable stream into meta info
 const decodedMetaInfo = await decode(torrentStream2);
