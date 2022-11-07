@@ -1,8 +1,10 @@
+## This package is still under heavy development, use with caution!!
+
 <div align="center">
-<img width="200" src="https://user-images.githubusercontent.com/10386119/200105371-05832afe-ec19-4373-988c-40c9fa3cf9e7.svg">
+<img width="200" src="https://user-images.githubusercontent.com/10386119/200158861-0398b9ce-35f6-4516-a79e-95ed1772b10b.svg">
   <h1>torrefy</h1>
   <p>
-    create v1, v2 or hybrid torrents in your browser
+    An <a href="https://developer.mozilla.org/docs/Web/JavaScript/Guide/Modules">ESM</a> package that uses <a href="https://developer.mozilla.org/docs/Web/API/Streams_API">Web Streams API</a> to create v1, v2 or hybrid torrents in your web browser
   </p>
 </div>
 
@@ -92,3 +94,14 @@ const info = await infoPromise;
 // get bencoded "info.pieces" as a piece of text
 const pieces = await piecesPromise;
 ```
+
+## Todos
+
+- [ ] BDecode implementation (tokenizer is ready now, parser is under development)
+- [ ] Magnet URI scheme (should be trivial)
+- [ ] Convert all `makeXXXTransformStream` functional closure states to [`transformer`](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream#:~:text=Parameters-,transformer,-Optional) class states (should be trivial)
+- [ ] `ArrayKeyedMap` with `ArrayBuffer` keys (use proxy or drop suppport?)
+- [ ] Convert typescript `Enum`s to `Union`s (need investigation)
+- [ ] Other type related issues (need investigation)
+- [ ] Bundleless entry (need investigation)
+- [ ] Support other common BEPs (need investigation)
