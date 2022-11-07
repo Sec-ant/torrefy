@@ -1,4 +1,4 @@
-## This package is still under heavy development, use with caution!!
+## This package is still under heavy development. APIs are prone to change. Use with caution!!
 
 <div align="center">
 <img width="200" src="https://user-images.githubusercontent.com/10386119/200158861-0398b9ce-35f6-4516-a79e-95ed1772b10b.svg">
@@ -8,12 +8,18 @@
   </p>
 </div>
 
+## Install
+
+```bash
+npm i torrefy # or yarn add torrefy
+```
+
 ## Usage
 
 ### Basic usage
 
 ```ts
-import { create, encode } from "torrefy";
+import { create, encode, decode } from "torrefy";
 
 // create a test file
 const testFile = new File(
@@ -27,8 +33,14 @@ const metaInfo = await create([testFile]);
 // bencode meta info into a readable stream
 const torrentStream = encode(metaInfo);
 
-// consume the readable stream as an array buffer
+// tee the readable stream into two readable streams
+const [torrentStream1, torrentStream2] = torrentStream.tee();
+
+// consume the first readable stream as an array buffer
 const torrentBinary = await new Response(torrentStream).arrayBuffer();
+
+// decode the second readable stream into meta info
+const decodedMetaInfo = await decode(torrentStream2);
 ```
 
 ### Advance usage
@@ -37,6 +49,7 @@ const torrentBinary = await new Response(torrentStream).arrayBuffer();
 import {
   create,
   encode,
+  decode,
   CommonPieceLength,
   TorrentType,
   TorrentOptions,
@@ -85,19 +98,26 @@ hooks.set(["info", "pieces"], updatePieces);
 
 // bencode meta info into a readable stream with registered hooks
 const torrentStream = encode(metaInfo, hooks);
-// consume the readable stream as an array buffer
-const torrentBinary = await new Response(torrentStream).arrayBuffer();
+
+// tee the readable stream into two readable streams
+const [torrentStream1, torrentStream2] = torrentStream.tee();
+
+// consume the first readable stream as an array buffer
+const torrentBinary = await new Response(torrentStream1).arrayBuffer();
 
 // get bencoded "info" as an array buffer
 const info = await infoPromise;
 
 // get bencoded "info.pieces" as a piece of text
 const pieces = await piecesPromise;
+
+// decode the second readable stream into meta info
+const decodedMetaInfo = await decode(torrentStream2);
 ```
 
 ## Todos
 
-- [ ] BDecode implementation (tokenizer is ready now, parser is under development)
+- [x] BDecode implementation
 - [ ] Magnet URI scheme (should be trivial)
 - [ ] Convert all `makeXXXTransformStream` functional closure states to [`transformer`](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream#:~:text=Parameters-,transformer,-Optional) class states (should be trivial)
 - [ ] `ArrayKeyedMap` with `ArrayBuffer` keys (use proxy or drop suppport?)
@@ -105,3 +125,5 @@ const pieces = await piecesPromise;
 - [ ] Other type related issues (need investigation)
 - [ ] Bundleless entry (need investigation)
 - [ ] Support other common BEPs (need investigation)
+- [ ] Add tests
+- [ ] Add demo page
