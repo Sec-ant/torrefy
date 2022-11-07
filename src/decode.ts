@@ -1,4 +1,4 @@
-import { BData, BList, BUFF_D, BUFF_E, BUFF_L } from "./encode.js";
+import { BData, BList, BObject, BUFF_D, BUFF_E, BUFF_L } from "./encode.js";
 
 enum TokenType {
   Integer = "Integer",
@@ -219,7 +219,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
       }
       // program shouldn't reach here
       else {
-        new Error("This is a bug");
+        throw new Error("This is a bug");
       }
     }
     // process byte length
@@ -255,7 +255,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
     }
     // program shouldn't reach here
     else {
-      new Error("This is a bug");
+      throw new Error("This is a bug");
     }
   }
 }
@@ -264,10 +264,11 @@ export function makeTokenizer() {
   return new TransformStream(new TokenizerTransformer());
 }
 
-export async function parse(tokenizerReadableStream: ReadableStream<Token>) {
-  const contextStack: BData[] = [];
-  const tokenStreamReader = tokenizerReadableStream.getReader();
-  let isDictionaryKey = true;
+export async function parse(tokenReadableStream: ReadableStream<Token>) {
+  let parsedResult: string | number | bigint | BObject | BList | undefined;
+  const contextStack: (BObject | BList)[] = [];
+  const tokenStreamReader = tokenReadableStream.getReader();
+  let dictionaryKey: string | undefined;
   while (true) {
     const { done, value: token } = await tokenStreamReader.read();
     if (done) {
@@ -275,47 +276,116 @@ export async function parse(tokenizerReadableStream: ReadableStream<Token>) {
     }
     const currentContext = contextStack.at(-1);
     // current context: global
-    if (contextStack.length === 0) {
-      if (token.type === TokenType.Integer) {
-        contextStack.push(parseInteger(token.value));
-      } else if (token.type === TokenType.ByteString) {
-        contextStack.push(parseByteString(token.value));
-      } else if (token.type === TokenType.DictionaryStart) {
-        contextStack.push(Object.create(null));
-      } else if (token.type === TokenType.ListStart) {
-        contextStack.push([]);
-      } else {
+    if (!currentContext) {
+      if (typeof parsedResult !== "undefined") {
         throw new SyntaxError(`Unexpected token: ${token}`);
+      }
+      switch (token.type) {
+        case TokenType.Integer:
+          parsedResult = parseInteger(token.value);
+          break;
+        case TokenType.ByteString:
+          parsedResult = parseByteString(token.value);
+          break;
+        case TokenType.DictionaryStart: {
+          const nextContext: BObject = Object.create(null);
+          contextStack.push(nextContext);
+          parsedResult = nextContext;
+          break;
+        }
+        case TokenType.ListStart: {
+          const nextContext: BList = [];
+          contextStack.push(nextContext);
+          parsedResult = nextContext;
+          break;
+        }
+        default:
+          throw new SyntaxError(`Unexpected token: ${token}`);
       }
     }
     // current context: list
     else if (Array.isArray(currentContext)) {
-      if (token.type === TokenType.Integer) {
-        currentContext.push(parseInteger(token.value));
-      } else if (token.type === TokenType.ByteString) {
-        currentContext.push(parseByteString(token.value));
-      } else if (token.type === TokenType.DictionaryStart) {
-        const nextContext = Object.create(null);
-        currentContext.push(nextContext);
-        contextStack.push(nextContext);
-      } else if (token.type === TokenType.ListStart) {
-        const nextContext: BList = [];
-        currentContext.push(nextContext);
-        contextStack.push([]);
-      } else if (token.type === TokenType.ListEnd) {
-        contextStack.pop();
-      } else {
-        throw new SyntaxError(`Unexpected token: ${token}`);
+      switch (token.type) {
+        case TokenType.Integer:
+          currentContext.push(parseInteger(token.value));
+          break;
+        case TokenType.ByteString:
+          currentContext.push(parseByteString(token.value));
+          break;
+        case TokenType.DictionaryStart: {
+          const nextContext: BObject = Object.create(null);
+          currentContext.push(nextContext);
+          contextStack.push(nextContext);
+          break;
+        }
+        case TokenType.ListStart: {
+          const nextContext: BList = [];
+          currentContext.push(nextContext);
+          contextStack.push(nextContext);
+          break;
+        }
+        case TokenType.ListEnd:
+          contextStack.pop();
+          break;
+        default:
+          throw new SyntaxError(`Unexpected token: ${token}`);
       }
     }
     // current context: dictionary
-    else if (typeof currentContext === "object") {
-      if (isDictionaryKey) {
+    else {
+      // dictionary key
+      if (typeof dictionaryKey === "undefined") {
+        switch (token.type) {
+          case TokenType.ByteString:
+            dictionaryKey = parseByteString(token.value);
+            break;
+          case TokenType.DictionaryEnd:
+            contextStack.pop();
+            break;
+          default:
+            throw new SyntaxError(`Unexpected token: ${token}`);
+        }
       }
-    } else {
-      throw new SyntaxError(`Unexpected token: ${token}`);
+      // dictionary value
+      else {
+        switch (token.type) {
+          case TokenType.Integer:
+            currentContext[dictionaryKey] = parseInteger(token.value);
+            break;
+          case TokenType.ByteString:
+            currentContext[dictionaryKey] = parseByteString(token.value);
+            break;
+          case TokenType.DictionaryStart: {
+            const nextContext: BObject = Object.create(null);
+            currentContext[dictionaryKey] = nextContext;
+            contextStack.push(nextContext);
+            break;
+          }
+          case TokenType.ListStart: {
+            const nextContext: BList = [];
+            currentContext[dictionaryKey] = nextContext;
+            contextStack.push(nextContext);
+            break;
+          }
+          default:
+            throw new SyntaxError(`Unexpected token: ${token}`);
+        }
+        dictionaryKey = undefined;
+      }
     }
   }
+  if (contextStack.length) {
+    throw new Error(`Unexpected end of token stream`);
+  }
+  return parsedResult;
+}
+
+export async function decode(
+  torrentReadableStream: ReadableStream<Uint8Array>
+): Promise<BData> {
+  const tokenizer = makeTokenizer();
+  const tokenReadableStream = torrentReadableStream.pipeThrough(tokenizer);
+  return await parse(tokenReadableStream);
 }
 
 function parseInteger(tokenValue: Uint8Array) {
@@ -402,5 +472,3 @@ function concatUint8Arrays(...uint8Arrays: Uint8Array[]) {
   }, 0);
   return result;
 }
-
-export {};
