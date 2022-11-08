@@ -1,4 +1,4 @@
-import { BData, BList, BObject, BUFF_D, BUFF_E, BUFF_L } from "./encode.js";
+import { BData, BList, BDictionary, BUFF_D, BUFF_E, BUFF_L } from "./encode.js";
 
 enum TokenType {
   Integer = "Integer",
@@ -92,7 +92,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
       this.byteStringLength ||
       this.byteStringOffset
     ) {
-      throw new SyntaxError("Incomplete stream");
+      throw new SyntaxError("Unexpected end of torrent stream");
     }
   }
   tokenize(
@@ -113,7 +113,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
           value: new Uint8Array(),
         };
       }
-      // bytestring length
+      // byte string length
       else if (isDigit(firstByte)) {
         // digit to number
         this.byteStringLength = firstByte - BYTE_0;
@@ -174,8 +174,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
           this.token.value = this.token.value
             ? concatUint8Arrays(this.token.value, chunk.subarray(0, indexOfE))
             : chunk.subarray(0, indexOfE);
-          // equeue integer token
-          // TODO: should I clone token ?
+          // equeue integer token (token is copied)
           controller.enqueue(this.token);
           // reset token to null
           this.token = null;
@@ -208,8 +207,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
           );
           // reset byte string offset
           this.byteStringOffset = 0;
-          // equeue byte string token
-          // TODO: should I clone token ?
+          // equeue byte string token (token is copied)
           controller.enqueue(this.token);
           // reset token to null
           this.token = null;
@@ -228,6 +226,8 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
       for (const [index, byte] of chunk.entries()) {
         // byte string length digit
         if (isDigit(byte)) {
+          // let's assume the byte string length is smaller than the max_safe_integer
+          // or the torrent file would be huuuuuuuuuuuuuge!
           this.byteStringLength = 10 * this.byteStringLength - BYTE_0 + byte;
         }
         // byte string length end
@@ -242,7 +242,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
       }
       // colon is found
       if (indexOfColon !== -1) {
-        // initialize a byte string token with fixed length uint8 array
+        // initialize a byte string token with a fixed length uint8 array
         this.token = {
           type: TokenType.ByteString,
           value: new Uint8Array(this.byteStringLength),
@@ -265,8 +265,8 @@ export function makeTokenizer() {
 }
 
 export async function parse(tokenReadableStream: ReadableStream<Token>) {
-  let parsedResult: string | number | bigint | BObject | BList | undefined;
-  const contextStack: (BObject | BList)[] = [];
+  let parsedResult: BData | undefined;
+  const contextStack: (BDictionary | BList)[] = [];
   const tokenStreamReader = tokenReadableStream.getReader();
   let dictionaryKey: string | undefined;
   while (true) {
@@ -288,7 +288,7 @@ export async function parse(tokenReadableStream: ReadableStream<Token>) {
           parsedResult = parseByteString(token.value);
           break;
         case TokenType.DictionaryStart: {
-          const nextContext: BObject = Object.create(null);
+          const nextContext: BDictionary = Object.create(null);
           contextStack.push(nextContext);
           parsedResult = nextContext;
           break;
@@ -313,7 +313,7 @@ export async function parse(tokenReadableStream: ReadableStream<Token>) {
           currentContext.push(parseByteString(token.value));
           break;
         case TokenType.DictionaryStart: {
-          const nextContext: BObject = Object.create(null);
+          const nextContext: BDictionary = Object.create(null);
           currentContext.push(nextContext);
           contextStack.push(nextContext);
           break;
@@ -356,7 +356,7 @@ export async function parse(tokenReadableStream: ReadableStream<Token>) {
             currentContext[dictionaryKey] = parseByteString(token.value);
             break;
           case TokenType.DictionaryStart: {
-            const nextContext: BObject = Object.create(null);
+            const nextContext: BDictionary = Object.create(null);
             currentContext[dictionaryKey] = nextContext;
             contextStack.push(nextContext);
             break;
@@ -374,7 +374,7 @@ export async function parse(tokenReadableStream: ReadableStream<Token>) {
       }
     }
   }
-  if (contextStack.length) {
+  if (contextStack.length || typeof parsedResult === "undefined") {
     throw new Error(`Unexpected end of token stream`);
   }
   return parsedResult;

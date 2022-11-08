@@ -11,7 +11,7 @@ import {
   calculatePieceLength,
 } from "./utils.js";
 
-import { BObject } from "./encode.js";
+import { BDictionary } from "./encode.js";
 
 /**
  * support padding attribute on file
@@ -219,7 +219,7 @@ export type FileAttrs = Permutations<
 /**
  * base file props
  */
-interface FilePropsBase extends BObject {
+type FilePropsBase = BDictionary<false> & {
   /**
    * Length of the file in bytes
    *
@@ -240,12 +240,12 @@ interface FilePropsBase extends BObject {
    * [BEP 47](https://www.bittorrent.org/beps/bep_0047.html#:~:text=20%20bytes%3E%2C%0A%20%20%20%20...%0A%20%20%7D%2C%0A%20%20...%0A%7D-,attr,-A%20variable%2Dlength)
    */
   attr?: FileAttrs;
-}
+};
 
 /**
  * v1 file props
  */
-export interface FilePropsV1 extends FilePropsBase {
+export type FilePropsV1 = FilePropsBase & {
   /**
    * A list of UTF-8 encoded strings
    * corresponding to **subdirectory** names
@@ -253,12 +253,12 @@ export interface FilePropsV1 extends FilePropsBase {
    * [BEP 3](https://www.bittorrent.org/beps/bep_0003.html#:~:text=file%2C%20in%20bytes.-,path,-%2D%20A%20list%20of)
    */
   path: string[];
-}
+};
 
 /**
  * v2 file props
  */
-export interface FilePropsV2 extends FilePropsBase {
+export type FilePropsV2 = FilePropsBase & {
   /**
    * For **non-empty** files this is the the root hash
    * of a merkle tree with a branching factor of 2,
@@ -267,7 +267,7 @@ export interface FilePropsV2 extends FilePropsBase {
    * [BEP 52](https://www.bittorrent.org/beps/bep_0052.html#:~:text=any%20sibling%20entries.-,pieces%20root,-For%20non%2Dempty)
    */
   ["pieces root"]?: ArrayBuffer;
-}
+};
 
 /**
  * v1 file list
@@ -277,7 +277,7 @@ export type FilesList = FilePropsV1[];
 /**
  * v2 file node value
  */
-export interface FileNodeValue extends BObject {
+export type FileNodeValue = BDictionary<false> & {
   /**
    * Entries with zero-length keys describe the properties
    * of the composed path at that point
@@ -285,26 +285,26 @@ export interface FileNodeValue extends BObject {
    * [BEP 52](https://www.bittorrent.org/beps/bep_0052.html#:~:text=Entries%20with%20zero%2Dlength%20keys%20describe%20the%20properties%20of%20the%20composed%20path%20at%20that%20point)
    */
   "": FilePropsV2;
-}
+};
 
 /**
  * v2 dir node value
  */
-export interface DirNodeValue extends BObject {
+export type DirNodeValue = BDictionary<false> & {
   [name: string]: DirNodeValue | FileNodeValue;
-}
+};
 
 /**
  * v2 file tree
  */
-export interface FileTree extends DirNodeValue, Iterable<FileNodeValue> {}
+export type FileTree = DirNodeValue;
 
 //===================================================================================
 
 /**
  * info base
  */
-interface InfoBase extends BObject {
+type InfoBase = BDictionary<false> & {
   /**
    * The suggested name to save the file (or directory) as.
    * It is purely advisory
@@ -327,33 +327,33 @@ interface InfoBase extends BObject {
    * is private torrent
    */
   private?: 0 | 1;
-}
+};
 
 /**
  * v1 info base
  */
-interface InfoV1Base extends InfoBase {
+type InfoV1Base = InfoBase & {
   /**
    * Pieces maps to a string whose length is a multiple of 20
    *
    * [BEP 3](https://www.bittorrent.org/beps/bep_0003.html#:~:text=M%20as%20default%29.-,pieces,-maps%20to%20a)
    */
   pieces: ArrayBuffer | string;
-}
+};
 
 /**
  * v1 single file info
  */
-interface InfoV1SingleFile extends InfoV1Base {
+type InfoV1SingleFile = InfoV1Base & {
   length: number;
-}
+};
 
 /**
  * v1 multi file info
  */
-interface InfoV1MultiFiles extends InfoV1Base {
+type InfoV1MultiFiles = InfoV1Base & {
   files: FilesList;
-}
+};
 
 /**
  * v1 info
@@ -363,7 +363,7 @@ type InfoV1 = InfoV1SingleFile | InfoV1MultiFiles;
 /**
  * v2 info
  */
-interface InfoV2 extends InfoBase {
+type InfoV2 = InfoBase & {
   /**
    * A tree of dictionaries where dictionary keys
    * represent UTF-8 encoded path elements
@@ -378,17 +378,17 @@ interface InfoV2 extends InfoBase {
    * [BEP 52](https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=an%20alignment%20gap.-,meta%20version,-An%20integer%20value)
    */
   ["meta version"]: number;
-}
+};
 
 /**
  * hybrid single file info
  */
-interface InfoHybridSingleFile extends InfoV1SingleFile, InfoV2 {}
+type InfoHybridSingleFile = InfoV1SingleFile & InfoV2;
 
 /**
  * hybrid multi file info
  */
-interface InfoHybridMultiFiles extends InfoV1MultiFiles, InfoV2 {}
+type InfoHybridMultiFiles = InfoV1MultiFiles & InfoV2;
 
 /**
  * hybrid info
@@ -417,7 +417,7 @@ export type PieceLayers = Map<ArrayBuffer, ArrayBuffer>;
 /**
  * base meta info
  */
-interface MetaInfoBase extends BObject {
+type MetaInfoBase = BDictionary<false> & {
   /**
    * The URL of the tracker
    *
@@ -452,29 +452,29 @@ interface MetaInfoBase extends BObject {
    * [BitTorrent Specification](https://courses.edsa-project.eu/pluginfile.php/1514/mod_resource/content/0/bitTorrent_part2.htm#:~:text=is%20here.-,creation%20date,-%3A%20%28optional%29%20the%20creation)
    */
   ["creation date"]?: number;
-}
+};
 
 /**
  * v1 meta info
  */
-interface MetaInfoV1 extends MetaInfoBase {
+type MetaInfoV1 = MetaInfoBase & {
   info: Info<TorrentType.V1>;
-}
+};
 
 /**
  * v2 meta info
  */
-interface MetaInfoV2 extends MetaInfoBase {
+type MetaInfoV2 = MetaInfoBase & {
   info: Info<TorrentType.V2>;
   ["piece layers"]?: PieceLayers;
-}
+};
 
 /**
  * hybrid meta info
  */
-interface MetaInfoHybrid extends MetaInfoV2 {
+type MetaInfoHybrid = MetaInfoV2 & {
   info: Info<TorrentType.HYBRID>;
-}
+};
 
 /**
  * meta info
@@ -684,12 +684,12 @@ export async function create(
     if (sortFiles) {
       // parse files as file tree, common directory is also parsed
       const {
-        fileTree,
+        sortedFileNodes,
         fileNodeMap,
         commonDir: _commonDir,
       } = parseFileTree(files);
       // reorder files
-      files = [...fileTree].map(
+      files = sortedFileNodes.map(
         (fileNode) => fileNodeMap.get(fileNode) as File
       );
       // assign common directory
@@ -768,18 +768,19 @@ export async function create(
     // destruct some options
     const { metaVersion } = iOpts;
     // parse files as file tree, common directory is also parsed
-    const { fileTree, fileNodeMap, commonDir } = parseFileTree(files);
-    // get ordered file nodes
-    const fileNodes = [...fileTree];
+    const { fileTree, sortedFileNodes, fileNodeMap, commonDir } =
+      parseFileTree(files);
     // get files from files nodes
-    files = fileNodes.map((fileNode) => fileNodeMap.get(fileNode) as File);
+    files = sortedFileNodes.map(
+      (fileNode) => fileNodeMap.get(fileNode) as File
+    );
     // init piece layers
     const pieceLayers: PieceLayers = new Map();
     // update name
     iOpts.name = name = decideName(name, commonDir, files);
     // bring piece layers into hash work
     await Promise.all(
-      fileNodes.map(async (fileNode, index) => {
+      sortedFileNodes.map(async (fileNode, index) => {
         const file = files[index];
         await setPieceRootAndLayer(fileNode, file, file.stream(), pieceLayers);
       })
@@ -804,11 +805,12 @@ export async function create(
     // destruct some options
     const { metaVersion } = iOpts;
     // parse files as file tree, common directory is also parsed
-    const { fileTree, fileNodeMap, commonDir } = parseFileTree(files);
-    // get ordered file nodes
-    const fileNodes = [...fileTree];
+    const { fileTree, sortedFileNodes, fileNodeMap, commonDir } =
+      parseFileTree(files);
     // get files from files nodes
-    files = fileNodes.map((fileNode) => fileNodeMap.get(fileNode) as File);
+    files = sortedFileNodes.map(
+      (fileNode) => fileNodeMap.get(fileNode) as File
+    );
     // init piece layers
     const pieceLayers: PieceLayers = new Map();
     // update name
@@ -821,7 +823,7 @@ export async function create(
     const v1PieceReadableStreamPromises: Promise<ReadableStream>[] = [];
     // v1 and v2 hash
     await Promise.all(
-      fileNodes.map(async (fileNode, index) => {
+      sortedFileNodes.map(async (fileNode, index) => {
         // get file
         const file = files[index];
         // we need to tee one stream into two streams for v1 and v2

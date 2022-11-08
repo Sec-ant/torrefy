@@ -56,6 +56,7 @@ type FileNodeMap = WeakMap<FileNodeValue, File>;
  */
 export function parseFileTree(files: File[]): {
   fileTree: FileTree;
+  sortedFileNodes: FileNodeValue[];
   fileNodeMap: FileNodeMap;
   commonDir: string | undefined;
 } {
@@ -107,16 +108,12 @@ export function parseFileTree(files: File[]): {
   const sortedFileNodes: FileNodeValue[] = [];
 
   const fileTree: FileTree = {
-    *[Symbol.iterator]() {
-      for (const fileNode of sortedFileNodes) {
-        yield fileNode;
-      }
-    },
     ...(getDirOrFileNode(rootEntries) as DirNodeValue),
   };
 
   return {
     fileTree,
+    sortedFileNodes,
     fileNodeMap,
     commonDir,
   };

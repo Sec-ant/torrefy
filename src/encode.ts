@@ -1,37 +1,35 @@
 import ArrayKeyedMap from "array-keyed-map";
 export { default as ArrayKeyedMap } from "array-keyed-map";
 import { iterableSort } from "./utils.js";
-/**
- * bencode list
- */
-export type BList = BData[];
 
-/**
- * bencode object (as dictionary)
- */
-export interface BObject {
-  [k: string]: BData;
-}
-
-/**
- * bencode map (as dictionary)
- */
-export type BMap = Map<ArrayBuffer | string, BData>;
-
-/**
- * allowed bencode data
- */
-export type BData =
-  | boolean
+// bencode integer type
+export type BInteger<Strict extends boolean = true> =
   | number
   | bigint
+  | (Strict extends true ? never : boolean);
+
+// bencode byte string type
+export type BByteString<Strict extends boolean = true> =
   | string
-  | ArrayBuffer
-  | BList
-  | BObject
-  | BMap
-  | undefined
-  | null;
+  | (Strict extends true ? never : ArrayBuffer);
+
+// bencode list type
+export type BList<Strict extends boolean = true> = BData<Strict>[];
+
+// bencode dictionary type
+export type BDictionary<Strict extends boolean = true> =
+  | {
+      [key: BByteString<true>]: BData<Strict>;
+    }
+  | (Strict extends true ? never : Map<BByteString<Strict>, BData<Strict>>);
+
+// bencode data type
+export type BData<Strict extends boolean = true> =
+  | BInteger<Strict>
+  | BByteString<Strict>
+  | BList<Strict>
+  | BDictionary<Strict>
+  | (Strict extends true ? never : undefined | null);
 
 /**
  * encode hook handler
@@ -63,14 +61,14 @@ export const BUFF_E = new Uint8Array([101]);
 /**
  * bencode readablestream underlying source
  */
-class BEncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
+class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
   textEncoder = new TextEncoder();
   textDecoder = new TextDecoder();
-  data: BData;
+  data: BData<false>;
   hooks: EncoderHooks | undefined;
   isHooking = false;
   path: (string | ArrayBuffer)[] = [];
-  constructor(data: BData, hooks?: EncoderHooks) {
+  constructor(data: BData<false>, hooks?: EncoderHooks) {
     this.data = data;
     this.hooks = hooks;
   }
@@ -78,15 +76,12 @@ class BEncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
     this.encode(this.data, controller);
     controller.close();
   }
-  encode(
-    data: BData | undefined,
-    controller: ReadableStreamController<Uint8Array>
-  ) {
+  encode(data: BData<false>, controller: ReadableStreamController<Uint8Array>) {
     // undefined or null: return
     if (typeof data === "undefined" || data === null) {
       return;
     }
-    // boolean: 0 or 1
+    // boolean: integer
     if (typeof data === "boolean") {
       this.encode(data ? 1 : 0, controller);
     }
@@ -106,14 +101,14 @@ class BEncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
     else if (typeof data === "bigint") {
       controller.enqueue(this.textEncoder.encode(`i${data}e`));
     }
-    // string: string
+    // string: byte string
     else if (typeof data === "string") {
       const byteData = this.textEncoder.encode(data);
       const byteLength = byteData.byteLength;
       controller.enqueue(this.textEncoder.encode(`${byteLength}:`));
       controller.enqueue(byteData);
     }
-    // array buffer: string
+    // array buffer: byte string
     else if (data instanceof ArrayBuffer) {
       const byteData = new Uint8Array(data);
       const byteLength = byteData.byteLength;
@@ -202,8 +197,8 @@ class BEncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
  * @param hooks
  * @returns readable stream of the bencoded data
  */
-export function encode(data: BData, hooks?: EncoderHooks) {
-  return new ReadableStream(new BEncoderUnderlyingSource(data, hooks));
+export function encode(data: BData<false>, hooks?: EncoderHooks) {
+  return new ReadableStream(new EncoderUnderlyingSource(data, hooks));
 }
 
 /**
