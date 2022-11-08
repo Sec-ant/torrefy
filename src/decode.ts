@@ -1,13 +1,11 @@
 import { BData, BList, BDictionary, BUFF_D, BUFF_E, BUFF_L } from "./encode.js";
+import { isDigit, concatUint8Arrays } from "./utils.js";
 
 enum TokenType {
   Integer = "Integer",
-
   ByteString = "ByteString",
-
   ListStart = "ListStart",
   ListEnd = "ListEnd",
-
   DictionaryStart = "DictionaryStart",
   DictionaryEnd = "DictionaryEnd",
 }
@@ -38,7 +36,7 @@ interface DictionaryEndToken {
   type: TokenType.DictionaryEnd;
 }
 
-type Token<T extends TokenType = TokenType> = T extends TokenType.Integer
+export type Token<T extends TokenType = TokenType> = T extends TokenType.Integer
   ? IntegerToken
   : T extends TokenType.ByteString
   ? ByteStringToken
@@ -58,21 +56,19 @@ type Token<T extends TokenType = TokenType> = T extends TokenType.Integer
       | DictionaryStartToken
       | DictionaryEndToken;
 
-const BYTE_I = 105;
-
 const BYTE_L = BUFF_L[0];
 
 const BYTE_D = BUFF_D[0];
 
 const BYTE_E = BUFF_E[0];
 
+const BYTE_I = 105;
+
 const BYTE_COLON = 58;
 
-const BYTE_0 = 48;
-
-const BYTE_9 = 57;
-
 const BYTE_MINUS = 45;
+
+export const BYTE_0 = 48;
 
 class TokenizerTransformer implements Transformer<Uint8Array, Token> {
   endStack: (TokenType.DictionaryEnd | TokenType.ListEnd)[] = [];
@@ -450,25 +446,4 @@ function parseInteger(tokenValue: Uint8Array) {
 function parseByteString(tokenValue: Uint8Array) {
   const textDecoder = new TextDecoder();
   return textDecoder.decode(tokenValue);
-}
-
-function isDigit(byte: number) {
-  if (byte >= BYTE_0 && byte <= BYTE_9) {
-    return true;
-  }
-  return false;
-}
-
-function concatUint8Arrays(...uint8Arrays: Uint8Array[]) {
-  const result = new Uint8Array(
-    uint8Arrays.reduce(
-      (length, uint8Array) => length + uint8Array.byteLength,
-      0
-    )
-  );
-  uint8Arrays.reduce((offset, uint8Array) => {
-    result.set(uint8Array, offset);
-    return offset + uint8Array.byteLength;
-  }, 0);
-  return result;
 }

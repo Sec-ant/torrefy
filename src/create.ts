@@ -1,7 +1,7 @@
 import { concatenate as concatenateStreams } from "workbox-streams";
 
 import {
-  parseFileTree,
+  getSortedIndex,
   collapseAnnounceList,
   getCommonDir,
   padFiles,
@@ -288,11 +288,31 @@ export type FileNodeValue = BDictionary<false> & {
 };
 
 /**
+ * v2 file entry
+ */
+type FileEntry = [key: string, value: FileNodeValue];
+
+/**
  * v2 dir node value
  */
 export type DirNodeValue = BDictionary<false> & {
   [name: string]: DirNodeValue | FileNodeValue;
 };
+
+/**
+ * v2 dir entry
+ */
+type DirEntry = [key: string, value: Entries];
+
+/**
+ * v2 file or dir entries
+ */
+type Entries = (FileEntry | DirEntry)[];
+
+/**
+ * v2 file node value => file map
+ */
+type FileNodeMap = WeakMap<FileNodeValue, File>;
 
 /**
  * v2 file tree
@@ -575,7 +595,7 @@ export type OnProgress = (
 export async function create(
   files: File[],
   opts: TorrentOptions = { type: TorrentType.V1 },
-  onProgress: OnProgress = (_, __) => {}
+  onProgress?: OnProgress
 ): Promise<MetaInfo<TorrentType>> {
   // empty file list will throw error
   if (files.length === 0) {
@@ -660,16 +680,24 @@ export async function create(
     ...(addCreationDate && { "creation date": (Date.now() / 1000) >> 0 }),
   };
 
-  // progress current (in piece unit)
-  let current = 0;
+  // init progress parameters
+  const progressParams = {
+    // progress current (in piece unit)
+    current: 0,
+    // progress total (in piece unit)
+    total: files.reduce((size, file) => {
+      return size + Math.ceil(file.size / pieceLength);
+    }, 0),
+  };
 
-  // progress total (in piece unit)
-  let total = files.reduce((size, file) => {
-    return size + Math.ceil(file.size / pieceLength);
-  }, 0);
+  // update progress
+  const updateProgress = () => {
+    if (onProgress) {
+      onProgress(progressParams.current++, progressParams.total);
+    }
+  };
 
   let metaInfo: MetaInfo<TorrentType>;
-  let PAD_LEAF: Uint8Array;
 
   // construct meta info
   // v1
@@ -707,8 +735,10 @@ export async function create(
       // hash each file and concatenate them into a single stream
       v1PieceReadableStream = concatenateStreams(
         files.map(async (file, fileIndex) =>
-          v1Hash(file.stream(), {
+          getV1PieceLayerReadableStream(file.stream(), {
+            pieceLength,
             padding: fileIndex !== lastFileIndex,
+            updateProgress,
           })
         )
       ).stream;
@@ -716,7 +746,7 @@ export async function create(
       files = padFiles(files, pieceLength, commonDir);
     } else {
       // reassign progress total (in piece unit)
-      total = Math.ceil(
+      progressParams.total = Math.ceil(
         files.reduce((size, file) => {
           return size + file.size;
         }, 0) / pieceLength
@@ -726,7 +756,14 @@ export async function create(
         files.map((file) => Promise.resolve(file.stream()))
       );
       // and then hash it
-      v1PieceReadableStream = v1Hash(concatenatedFileReadableStream);
+      v1PieceReadableStream = getV1PieceLayerReadableStream(
+        concatenatedFileReadableStream,
+        {
+          pieceLength,
+          padding: false,
+          updateProgress,
+        }
+      );
     }
     // populate meta info
     metaInfo = {
@@ -770,7 +807,7 @@ export async function create(
     // parse files as file tree, common directory is also parsed
     const { fileTree, sortedFileNodes, fileNodeMap, commonDir } =
       parseFileTree(files);
-    // get files from files nodes
+    // get sorted files
     files = sortedFileNodes.map(
       (fileNode) => fileNodeMap.get(fileNode) as File
     );
@@ -782,7 +819,17 @@ export async function create(
     await Promise.all(
       sortedFileNodes.map(async (fileNode, index) => {
         const file = files[index];
-        await setPieceRootAndLayer(fileNode, file, file.stream(), pieceLayers);
+        await populatePieceLayersAndFileNode(
+          file.stream(),
+          pieceLayers,
+          fileNode,
+          {
+            blockLength,
+            pieceLength,
+            blocksPerPiece,
+            updateProgress,
+          }
+        );
       })
     );
     // populate meta info
@@ -807,7 +854,7 @@ export async function create(
     // parse files as file tree, common directory is also parsed
     const { fileTree, sortedFileNodes, fileNodeMap, commonDir } =
       parseFileTree(files);
-    // get files from files nodes
+    // get sorted files
     files = sortedFileNodes.map(
       (fileNode) => fileNodeMap.get(fileNode) as File
     );
@@ -816,7 +863,7 @@ export async function create(
     // update name
     iOpts.name = name = decideName(name, commonDir, files);
     // double total in progress because we have v1 and v2 pieces
-    total *= 2;
+    progressParams.total *= 2;
     // get last file index
     const lastFileIndex = files.length - 1;
     // declare v1 piece readable stream
@@ -831,13 +878,25 @@ export async function create(
         // wrap v1 streams to promises for later concatenation
         v1PieceReadableStreamPromises.push(
           Promise.resolve(
-            v1Hash(v1FileStream, {
+            getV1PieceLayerReadableStream(v1FileStream, {
+              pieceLength,
               padding: index !== lastFileIndex,
+              updateProgress,
             })
           )
         );
         // v2
-        await setPieceRootAndLayer(fileNode, file, v2FileStream, pieceLayers);
+        await populatePieceLayersAndFileNode(
+          v2FileStream,
+          pieceLayers,
+          fileNode,
+          {
+            blockLength,
+            pieceLength,
+            blocksPerPiece,
+            updateProgress,
+          }
+        );
       })
     );
     // concatenate v1 hash streams
@@ -889,270 +948,414 @@ export async function create(
   }
 
   return metaInfo;
+}
 
-  /**
-   * Calculate and set piece root and piece layer in v2 type torrent
-   * @param fileNode
-   * @param file
-   * @param fileStream
-   * @param pieceLayers
-   */
-  async function setPieceRootAndLayer(
-    fileNode: FileNodeValue,
-    file: File,
-    fileStream: ReadableStream<Uint8Array>,
-    pieceLayers: PieceLayers
-  ) {
-    // get pieces root and piece layer readable streams
-    const [piecesRootReadableStream, pieceLayerReadableStream] =
-      v2Hash(fileStream);
-    // get buffer promise from pieces root
-    const piecesRootArrayBufferPromise = new Response(
-      piecesRootReadableStream
+/**
+ * Populate piece layers and file node in a v2 torrent
+ * @param fileStream
+ * @param pieceLayers
+ * @param fileNode
+ * @param opts
+ */
+async function populatePieceLayersAndFileNode(
+  fileStream: ReadableStream<Uint8Array>,
+  pieceLayers: PieceLayers,
+  fileNode: FileNodeValue,
+  opts: {
+    blockLength: number;
+    pieceLength: number;
+    blocksPerPiece: number;
+    updateProgress?: () => void;
+  }
+) {
+  // get pieces root and piece layer readable streams
+  const { piecesRootReadableStream, pieceLayerReadableStream } =
+    getV2PiecesRootAndPieceLayerReadableStreams(fileStream, opts);
+  // get buffer promise from pieces root
+  const piecesRootArrayBufferPromise = new Response(
+    piecesRootReadableStream
+  ).arrayBuffer();
+  // only files that are larger than the piece size have piece layer entries
+  // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=For%20each%20file%20in%20the%20file%20tree%20that%20is%20larger%20than%20the%20piece%20size%20it%20contains%20one%20string%20value
+  if (fileNode[""].length > opts.pieceLength) {
+    const pieceLayerArrayBufferPromise = new Response(
+      pieceLayerReadableStream
     ).arrayBuffer();
-    // only files that are larger than the piece size have piece layer entries
-    // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=For%20each%20file%20in%20the%20file%20tree%20that%20is%20larger%20than%20the%20piece%20size%20it%20contains%20one%20string%20value
-    if (file.size > pieceLength) {
-      const pieceLayerArrayBufferPromise = new Response(
-        pieceLayerReadableStream
-      ).arrayBuffer();
-      pieceLayers.set(
-        await piecesRootArrayBufferPromise,
-        await pieceLayerArrayBufferPromise
+    pieceLayers.set(
+      await piecesRootArrayBufferPromise,
+      await pieceLayerArrayBufferPromise
+    );
+  }
+  // only non-empty files have ["pieces root"] property
+  // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=For-,non%2Dempty,-files%20this%20is
+  if (fileNode[""].length > 0) {
+    fileNode[""]["pieces root"] = await piecesRootArrayBufferPromise;
+  }
+}
+
+/**
+ * Returns the piece layer of file(s) in a v1 type torrent
+ * @param stream file stream
+ * @param opts options
+ * @returns piece layer
+ */
+function getV1PieceLayerReadableStream(
+  stream: ReadableStream<Uint8Array>,
+  opts: {
+    pieceLength: number;
+    padding: boolean;
+    updateProgress?: () => void;
+  }
+): ReadableStream<Uint8Array> {
+  const pieceLayerReadableStream = stream
+    .pipeThrough(
+      makeChunkSplitter(opts.pieceLength, {
+        padding: opts.padding,
+      })
+    )
+    .pipeThrough(makePieceHasher(opts.updateProgress));
+  return pieceLayerReadableStream;
+}
+
+/**
+ * Returns the pieces root and piece layer of a file in a v2 type torrent
+ * @param stream
+ * @param opts
+ * @returns
+ */
+function getV2PiecesRootAndPieceLayerReadableStreams(
+  stream: ReadableStream<Uint8Array>,
+  opts: {
+    blockLength: number;
+    blocksPerPiece: number;
+    updateProgress?: () => void;
+  }
+) {
+  const pieceLayerReadableStream: ReadableStream<Uint8Array> = stream
+    .pipeThrough(makeChunkSplitter(opts.blockLength))
+    .pipeThrough(makeBlockHasher(opts.blocksPerPiece))
+    .pipeThrough(makeMerkleRootCalculator(opts.updateProgress));
+
+  const [pl1ReadableStream, pl2ReadableStream] = pieceLayerReadableStream.tee();
+
+  return {
+    piecesRootReadableStream: pl2ReadableStream
+      .pipeThrough(makeMerkleTreeBalancer(opts.blocksPerPiece))
+      .pipeThrough(makeMerkleRootCalculator()),
+    pieceLayerReadableStream: pl1ReadableStream,
+  };
+}
+
+/**
+ * Chunk splitter transformer class
+ */
+class ChunkSplitterTransformer implements Transformer<Uint8Array, Uint8Array> {
+  residuePointer = 0;
+  chunkLength;
+  residue;
+  opts;
+  constructor(chunkLength: number, opts = { padding: false }) {
+    this.chunkLength = chunkLength;
+    this.opts = opts;
+    this.residue = new Uint8Array(this.chunkLength);
+  }
+  transform(
+    chunk: Uint8Array,
+    controller: TransformStreamDefaultController<Uint8Array>
+  ) {
+    while (this.residuePointer + chunk.byteLength >= this.chunkLength) {
+      const chunkEnd = this.chunkLength - this.residuePointer;
+      this.residue.set(chunk.subarray(0, chunkEnd), this.residuePointer);
+      this.residuePointer = 0;
+      controller.enqueue(new Uint8Array(this.residue));
+      chunk = chunk.subarray(chunkEnd);
+    }
+    this.residue.set(chunk, this.residuePointer);
+    this.residuePointer += chunk.byteLength;
+  }
+  flush(controller: TransformStreamDefaultController<Uint8Array>) {
+    if (this.residuePointer <= 0) {
+      return;
+    }
+    if (this.opts.padding) {
+      this.residue.set(
+        new Uint8Array(this.chunkLength - this.residuePointer),
+        this.residuePointer
       );
-    }
-    // only non-empty files have ["pieces root"] property
-    // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=For-,non%2Dempty,-files%20this%20is
-    if (file.size > 0) {
-      fileNode[""]["pieces root"] = await piecesRootArrayBufferPromise;
+      controller.enqueue(this.residue);
+    } else {
+      controller.enqueue(this.residue.subarray(0, this.residuePointer));
     }
   }
-  /**
-   * Returns the piece layer of file(s) in a v1 type torrent
-   * @param stream file stream
-   * @param opts options
-   * @returns piece layer
-   */
-  function v1Hash(
-    stream: ReadableStream<Uint8Array>,
-    opts = { padding: false }
-  ): ReadableStream<Uint8Array> {
-    const pieceLayerReadableStream = stream
-      .pipeThrough(
-        makeChunkSplitter(pieceLength, {
-          padding: opts.padding,
-        })
-      )
-      .pipeThrough(makePieceHasher(true));
-    return pieceLayerReadableStream;
+}
+
+/**
+ * Make a chunk splitter transform stream
+ * @param chunkLength block length
+ * @param opts options
+ * @returns chunk splitter transform stream
+ */
+function makeChunkSplitter(chunkLength: number, opts = { padding: false }) {
+  return new TransformStream(new ChunkSplitterTransformer(chunkLength, opts));
+}
+
+/**
+ * Piece hasher transformer class
+ */
+class PieceHasherTransformer implements Transformer<Uint8Array, Uint8Array> {
+  updateProgress;
+  constructor(updateProgress?: () => void) {
+    this.updateProgress = updateProgress;
   }
-
-  /**
-   * Returns the pieces root and piece layer of a file in a v2 type torrent
-   * @param {ReadableStream<Uint8Array>} stream
-   * @returns piece layer
-   */
-  function v2Hash(
-    stream: ReadableStream<Uint8Array>
-  ): [
-    v2PiecesRootReadableStream: ReadableStream<Uint8Array>,
-    v2PieceLayerReadableStream: ReadableStream<Uint8Array>
-  ] {
-    const pieceLayerReadableStream: ReadableStream<Uint8Array> = stream
-      .pipeThrough(makeChunkSplitter(blockLength))
-      .pipeThrough(makeBlockHasher())
-      .pipeThrough(makeMerkleRootCalculator(true));
-
-    const [pl1ReadableStream, pl2ReadableStream] =
-      pieceLayerReadableStream.tee();
-
-    return [
-      pl2ReadableStream
-        .pipeThrough(makeMerkleTreeBalancer())
-        .pipeThrough(makeMerkleRootCalculator()),
-      pl1ReadableStream,
-    ];
+  async transform(
+    chunk: Uint8Array,
+    controller: TransformStreamDefaultController<Uint8Array>
+  ) {
+    let pieceHash: Uint8Array;
+    try {
+      pieceHash = new Uint8Array(await crypto.subtle.digest("SHA-1", chunk));
+    } catch {
+      const { default: jsSHA1 } = await import("jssha/sha1");
+      const sha1Obj = new jsSHA1("SHA-1", "UINT8ARRAY");
+      sha1Obj.update(chunk);
+      pieceHash = sha1Obj.getHash("UINT8ARRAY");
+    }
+    controller.enqueue(pieceHash);
+    if (this.updateProgress) {
+      this.updateProgress();
+    }
   }
+}
 
-  /**
-   * Make a chunk splitter transform stream
-   * @param chunkLength block length
-   * @param opts options
-   * @returns
-   */
-  function makeChunkSplitter(
-    chunkLength: number,
-    opts = { padding: false }
-  ): TransformStream<Uint8Array, Uint8Array> {
-    let residue = new Uint8Array(chunkLength);
-    let residuePointer = 0;
-    return new TransformStream({
-      transform: (
-        chunk: Uint8Array,
-        controller: TransformStreamDefaultController<Uint8Array>
-      ) => {
-        while (residuePointer + chunk.length >= chunkLength) {
-          const chunkEnd = chunkLength - residuePointer;
-          residue.set(chunk.subarray(0, chunkEnd), residuePointer);
-          residuePointer = 0;
-          controller.enqueue(new Uint8Array(residue));
-          chunk = chunk.subarray(chunkEnd);
-        }
-        residue.set(chunk, residuePointer);
-        residuePointer += chunk.length;
-      },
-      flush: (controller: TransformStreamDefaultController<Uint8Array>) => {
-        if (residuePointer > 0) {
-          if (opts.padding) {
-            residue.set(
-              new Uint8Array(chunkLength - residuePointer),
-              residuePointer
-            );
-            controller.enqueue(residue);
-          } else {
-            controller.enqueue(residue.subarray(0, residuePointer));
-          }
-        }
-      },
-    });
+/**
+ * Make a piece hasher transform stream
+ * @param updateProgress
+ * @returns piece hasher transform stream
+ */
+function makePieceHasher(updateProgress?: () => void) {
+  return new TransformStream(new PieceHasherTransformer(updateProgress));
+}
+
+/**
+ * Block hasher transformer class
+ */
+class BlockHasherTransformer implements Transformer<Uint8Array, Uint8Array[]> {
+  blockCount = 0;
+  merkleLeaves: Uint8Array[] = [];
+  blocksPerPiece;
+  constructor(blocksPerPiece: number) {
+    this.blocksPerPiece = blocksPerPiece;
   }
-
-  /**
-   * Make a piece hasher transform stream
-   * @param hookOnProgress
-   * @returns
-   */
-  function makePieceHasher(hookOnProgress = false) {
-    return new TransformStream({
-      transform: async (
-        chunk: Uint8Array,
-        controller: TransformStreamDefaultController<Uint8Array>
-      ) => {
-        let pieceHash: Uint8Array;
-        try {
-          pieceHash = new Uint8Array(
-            await crypto.subtle.digest("SHA-1", chunk)
-          );
-        } catch {
-          const { default: jsSHA1 } = await import("jssha/sha1");
-          const sha1Obj = new jsSHA1("SHA-1", "UINT8ARRAY");
-          sha1Obj.update(chunk);
-          pieceHash = sha1Obj.getHash("UINT8ARRAY");
-        }
-        controller.enqueue(pieceHash);
-        if (hookOnProgress) {
-          onProgress(++current, total);
-        }
-      },
-    });
+  async transform(
+    chunk: Uint8Array,
+    controller: TransformStreamDefaultController<Uint8Array[]>
+  ) {
+    ++this.blockCount;
+    let blockHash: Uint8Array;
+    try {
+      blockHash = new Uint8Array(await crypto.subtle.digest("SHA-256", chunk));
+    } catch {
+      const { default: jsSHA256 } = await import("jssha/sha256");
+      const sha256Obj = new jsSHA256("SHA-256", "UINT8ARRAY");
+      sha256Obj.update(chunk);
+      blockHash = sha256Obj.getHash("UINT8ARRAY");
+    }
+    this.merkleLeaves.push(blockHash);
+    if (this.merkleLeaves.length === this.blocksPerPiece) {
+      controller.enqueue(this.merkleLeaves);
+      this.merkleLeaves = [];
+    }
   }
+  async flush(controller: TransformStreamDefaultController<Uint8Array[]>) {
+    if (this.blockCount === 0) {
+      return;
+    }
+    // http://bittorrent.org/beps/bep_0052.html#:~:text=The%20remaining%20leaf%20hashes%20beyond%20the%20end%20of%20the%20file%20required%20to%20construct%20upper%20layers%20of%20the%20merkle%20tree%20are%20set%20to%20zero
+    let restBlockCount = 0;
+    // If the file is smaller than one piece then the block hashes
+    // should be padded to the next power of two instead of the next
+    // piece boundary.
+    if (this.blockCount < this.blocksPerPiece) {
+      restBlockCount = nextPowerOfTwo(this.blockCount) - this.blockCount;
+    } else {
+      const residue = this.blockCount % this.blocksPerPiece;
+      if (residue > 0) {
+        restBlockCount = this.blocksPerPiece - residue;
+      }
+    }
+    if (restBlockCount > 0) {
+      for (let i = 0; i < restBlockCount; ++i) {
+        this.merkleLeaves.push(ZEROS_32_BYTES);
+      }
+    }
+    if (this.merkleLeaves.length > 0) {
+      controller.enqueue(this.merkleLeaves);
+    }
+  }
+}
 
-  /**
-   * Make a block hasher transform stream
-   * @returns
-   */
-  function makeBlockHasher() {
-    let blockCount = 0;
-    let merkleLeaves: Uint8Array[] = [];
-    return new TransformStream({
-      transform: async (
-        chunk: Uint8Array,
-        controller: TransformStreamDefaultController<Uint8Array[]>
-      ) => {
-        ++blockCount;
-        let blockHash: Uint8Array;
-        try {
-          blockHash = new Uint8Array(
-            await crypto.subtle.digest("SHA-256", chunk)
-          );
-        } catch {
-          const { default: jsSHA256 } = await import("jssha/sha256");
-          const sha256Obj = new jsSHA256("SHA-256", "UINT8ARRAY");
-          sha256Obj.update(chunk);
-          blockHash = sha256Obj.getHash("UINT8ARRAY");
+/**
+ * Make a block hasher transform stream
+ * @param blocksPerPiece
+ * @returns block hasher transform stream
+ */
+function makeBlockHasher(blocksPerPiece: number) {
+  return new TransformStream(new BlockHasherTransformer(blocksPerPiece));
+}
+
+/**
+ * Merkle root calculator transformer class
+ */
+class MerkleRootCalculatorTransformer
+  implements Transformer<Uint8Array[], Uint8Array>
+{
+  updateProgress;
+  constructor(updateProgress?: () => void) {
+    this.updateProgress = updateProgress;
+  }
+  async transform(
+    chunk: Uint8Array[],
+    controller: TransformStreamDefaultController<Uint8Array>
+  ) {
+    controller.enqueue(await merkleRoot(chunk));
+    if (this.updateProgress) {
+      this.updateProgress();
+    }
+  }
+}
+
+/**
+ * Make a merkle root calculator transform stream
+ * @param updateProgress
+ * @returns merkle root calculator transform stream
+ */
+function makeMerkleRootCalculator(updateProgress?: () => void) {
+  return new TransformStream(
+    new MerkleRootCalculatorTransformer(updateProgress)
+  );
+}
+
+/**
+ * Merkle tree balancer transformer class
+ */
+class MerkleTreeBalancerTransformer
+  implements Transformer<Uint8Array, Uint8Array[]>
+{
+  leafCount = 0;
+  merkleLeaves: Uint8Array[] = [];
+  blocksPerPiece;
+  constructor(blocksPerPiece: number) {
+    this.blocksPerPiece = blocksPerPiece;
+  }
+  transform(chunk: Uint8Array) {
+    ++this.leafCount;
+    this.merkleLeaves.push(chunk);
+  }
+  async flush(controller: TransformStreamDefaultController<Uint8Array[]>) {
+    const restLeafCount = nextPowerOfTwo(this.leafCount) - this.leafCount;
+    if (restLeafCount > 0) {
+      const padLeaf = await this.padLeafPromise;
+      for (let i = 0; i < restLeafCount; ++i) {
+        this.merkleLeaves.push(padLeaf);
+      }
+    }
+    controller.enqueue(this.merkleLeaves);
+  }
+  get padLeafPromise() {
+    return merkleRoot(Array(this.blocksPerPiece).fill(new Uint8Array(32)));
+  }
+}
+
+/**
+ * Make a merkle tree balancer transform stream
+ * @param blocksPerPiece
+ * @returns merkle tree balancer transform stream
+ */
+function makeMerkleTreeBalancer(blocksPerPiece: number) {
+  return new TransformStream(new MerkleTreeBalancerTransformer(blocksPerPiece));
+}
+
+/**
+ * Parse an array of files into a file tree
+ * and return the sorted file nodes
+ * @param files an array of files
+ * @returns file tree, file node map and common directory
+ */
+function parseFileTree(files: File[]): {
+  fileTree: FileTree;
+  sortedFileNodes: FileNodeValue[];
+  fileNodeMap: FileNodeMap;
+  commonDir: string | undefined;
+} {
+  let rootEntries: Entries = [];
+
+  const fileNodeMap: FileNodeMap = new WeakMap();
+
+  for (const file of files) {
+    const pathArray = (file.webkitRelativePath || file.name).split("/");
+    pathArray.reduce(
+      (entries: Entries | FileNodeValue, currentPathSegment, index) => {
+        entries = entries as Entries;
+        let entry: FileEntry | DirEntry | undefined = entries.find(
+          (entry) => entry[0] === currentPathSegment
+        );
+        if (entry) {
+          return entry[1];
         }
-        merkleLeaves.push(blockHash);
-        if (merkleLeaves.length === blocksPerPiece) {
-          controller.enqueue(merkleLeaves);
-          merkleLeaves = [];
-        }
-      },
-      flush: async (
-        controller: TransformStreamDefaultController<Uint8Array[]>
-      ) => {
-        if (blockCount === 0) {
-          return;
-        }
-        // http://bittorrent.org/beps/bep_0052.html#:~:text=The%20remaining%20leaf%20hashes%20beyond%20the%20end%20of%20the%20file%20required%20to%20construct%20upper%20layers%20of%20the%20merkle%20tree%20are%20set%20to%20zero
-        let restBlockCount = 0;
-        // If the file is smaller than one piece then the block hashes
-        // should be padded to the next power of two instead of the next
-        // piece boundary.
-        if (blockCount < blocksPerPiece) {
-          restBlockCount = nextPowerOfTwo(blockCount) - blockCount;
+        const insertIndex = getSortedIndex(
+          entries,
+          currentPathSegment,
+          (a, b) => (a[0] < b ? -1 : 1)
+        );
+        if (index === pathArray.length - 1) {
+          const fileNode = {
+            "": {
+              length: file.size,
+            },
+          };
+          fileNodeMap.set(fileNode, file);
+          entry = [currentPathSegment, fileNode];
         } else {
-          const residue = blockCount % blocksPerPiece;
-          if (residue > 0) {
-            restBlockCount = blocksPerPiece - residue;
-          }
+          entry = [currentPathSegment, []];
         }
-        if (restBlockCount > 0) {
-          for (let i = 0; i < restBlockCount; ++i) {
-            merkleLeaves.push(ZEROS_32_BYTES);
-          }
-        }
-        if (merkleLeaves.length > 0) {
-          controller.enqueue(merkleLeaves);
-        }
+        entries.splice(insertIndex, 0, entry);
+
+        return entry[1];
       },
-    });
+      rootEntries
+    );
   }
 
-  /**
-   * Make a merkle root calculator transform stream
-   * @param hookOnProgress
-   * @returns
-   */
-  function makeMerkleRootCalculator(hookOnProgress = false) {
-    return new TransformStream({
-      transform: async (
-        chunk: Uint8Array[],
-        controller: TransformStreamDefaultController<Uint8Array>
-      ) => {
-        controller.enqueue(await merkleRoot(chunk));
-        if (hookOnProgress) {
-          onProgress(++current, total);
-        }
-      },
-    });
+  let commonDir: string | undefined;
+  if (rootEntries.length === 1 && Array.isArray(rootEntries[0][1])) {
+    commonDir = rootEntries[0][0];
+    rootEntries = rootEntries[0][1];
   }
 
-  /**
-   * Make a merkle tree balancer transform stream
-   * @returns
-   */
-  function makeMerkleTreeBalancer() {
-    let leafCount = 0;
-    let merkleLeaves: Uint8Array[] = [];
-    return new TransformStream({
-      transform: (chunk: Uint8Array) => {
-        ++leafCount;
-        merkleLeaves.push(chunk);
-      },
-      flush: async (
-        controller: TransformStreamDefaultController<Uint8Array[]>
-      ) => {
-        const restLeafCount = nextPowerOfTwo(leafCount) - leafCount;
-        if (restLeafCount > 0) {
-          PAD_LEAF ??= await merkleRoot(
-            Array(blocksPerPiece).fill(new Uint8Array(32))
-          );
-          for (let i = 0; i < restLeafCount; ++i) {
-            merkleLeaves.push(PAD_LEAF);
-          }
-        }
-        controller.enqueue(merkleLeaves);
-      },
-    });
+  const sortedFileNodes: FileNodeValue[] = [];
+
+  const fileTree: FileTree = {
+    ...(getDirOrFileNode(rootEntries) as DirNodeValue),
+  };
+
+  return {
+    fileTree,
+    sortedFileNodes,
+    fileNodeMap,
+    commonDir,
+  };
+
+  function getDirOrFileNode(entries: Entries | FileNodeValue) {
+    if (Array.isArray(entries)) {
+      const dirNode: DirNodeValue = {};
+      for (const entry of entries) {
+        dirNode[entry[0]] = getDirOrFileNode(entry[1]);
+      }
+      return dirNode;
+    } else {
+      const fileNode = entries;
+      sortedFileNodes.push(fileNode);
+      return fileNode;
+    }
   }
 }

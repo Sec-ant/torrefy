@@ -1,4 +1,5 @@
 import { v4 } from "uuid";
+import { BYTE_0 } from "./decode.js";
 /**
  * A helper function to determine the index
  * of a new value in an existed sorted array
@@ -40,97 +41,6 @@ export function iterableSort<T>(
     sorted.splice(getSortedIndex(sorted, item, compareFunction), 0, item);
   }
   return sorted;
-}
-
-import { FileNodeValue, DirNodeValue, FileTree } from "./create.js";
-type FileEntry = [key: string, value: FileNodeValue];
-type DirEntry = [key: string, value: Entries];
-type Entries = (FileEntry | DirEntry)[];
-type FileNodeMap = WeakMap<FileNodeValue, File>;
-
-/**
- * Parse an array of files into a file tree
- * and return the sorted file nodes
- * @param files an array of files
- * @returns file tree, file node map and common directory
- */
-export function parseFileTree(files: File[]): {
-  fileTree: FileTree;
-  sortedFileNodes: FileNodeValue[];
-  fileNodeMap: FileNodeMap;
-  commonDir: string | undefined;
-} {
-  let rootEntries: Entries = [];
-
-  const fileNodeMap: FileNodeMap = new WeakMap();
-
-  for (const file of files) {
-    const pathArray = (file.webkitRelativePath || file.name).split("/");
-    pathArray.reduce(
-      (entries: Entries | FileNodeValue, currentPathSegment, index) => {
-        entries = entries as Entries;
-        let entry: FileEntry | DirEntry | undefined = entries.find(
-          (entry) => entry[0] === currentPathSegment
-        );
-        if (entry) {
-          return entry[1];
-        }
-        const insertIndex = getSortedIndex(
-          entries,
-          currentPathSegment,
-          (a, b) => (a[0] < b ? -1 : 1)
-        );
-        if (index === pathArray.length - 1) {
-          const fileNode = {
-            "": {
-              length: file.size,
-            },
-          };
-          fileNodeMap.set(fileNode, file);
-          entry = [currentPathSegment, fileNode];
-        } else {
-          entry = [currentPathSegment, []];
-        }
-        entries.splice(insertIndex, 0, entry);
-
-        return entry[1];
-      },
-      rootEntries
-    );
-  }
-
-  let commonDir: string | undefined;
-  if (rootEntries.length === 1 && Array.isArray(rootEntries[0][1])) {
-    commonDir = rootEntries[0][0];
-    rootEntries = rootEntries[0][1];
-  }
-
-  const sortedFileNodes: FileNodeValue[] = [];
-
-  const fileTree: FileTree = {
-    ...(getDirOrFileNode(rootEntries) as DirNodeValue),
-  };
-
-  return {
-    fileTree,
-    sortedFileNodes,
-    fileNodeMap,
-    commonDir,
-  };
-
-  function getDirOrFileNode(entries: Entries | FileNodeValue) {
-    if (Array.isArray(entries)) {
-      const dirNode: DirNodeValue = {};
-      for (const entry of entries) {
-        dirNode[entry[0]] = getDirOrFileNode(entry[1]);
-      }
-      return dirNode;
-    } else {
-      const fileNode = entries;
-      sortedFileNodes.push(fileNode);
-      return fileNode;
-    }
-  }
 }
 
 /**
@@ -290,4 +200,35 @@ export function decideName(
  */
 export function calculatePieceLength(fileSize: number, blockLength: number) {
   return Math.max(blockLength, nextPowerOfTwo(fileSize >>> 10));
+}
+
+/**
+ * is byte digit
+ * @param byte
+ * @returns
+ */
+export function isDigit(byte: number) {
+  if (byte >= BYTE_0 && byte <= BYTE_0 + 9) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * concat uint8 arrays
+ * @param uint8Arrays
+ * @returns
+ */
+export function concatUint8Arrays(...uint8Arrays: Uint8Array[]) {
+  const result = new Uint8Array(
+    uint8Arrays.reduce(
+      (length, uint8Array) => length + uint8Array.byteLength,
+      0
+    )
+  );
+  uint8Arrays.reduce((offset, uint8Array) => {
+    result.set(uint8Array, offset);
+    return offset + uint8Array.byteLength;
+  }, 0);
+  return result;
 }
