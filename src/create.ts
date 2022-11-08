@@ -154,7 +154,7 @@ interface TorrentOptionsHybrid extends TorrentOptionsBase {
 /**
  * torrent options
  */
-export type TorrentOptions<T extends TorrentType | undefined = undefined> =
+export type TorrentOptions<T extends TorrentType = TorrentType> =
   T extends TorrentType.V1
     ? TorrentOptionsV1
     : T extends TorrentType.V2
@@ -166,19 +166,14 @@ export type TorrentOptions<T extends TorrentType | undefined = undefined> =
 /**
  * internal torrent options
  */
-type InternalTorrentOptions<T extends TorrentType | undefined = undefined> =
-  T extends TorrentType
-    ? TorrentOptions<T> &
-        Required<
-          Omit<
-            TorrentOptions<T>,
-            "announce" | "announceList" | "comment" | "name" | "pieceLength"
-          >
-        >
-    :
-        | InternalTorrentOptions<TorrentType.V1>
-        | InternalTorrentOptions<TorrentType.V2>
-        | InternalTorrentOptions<TorrentType.HYBRID>;
+type InternalTorrentOptions<T extends TorrentType = TorrentType> =
+  TorrentOptions<T> &
+    Required<
+      Omit<
+        TorrentOptions<T>,
+        "announce" | "announceList" | "comment" | "name" | "pieceLength"
+      >
+    >;
 
 //===================================================================================
 
@@ -418,14 +413,13 @@ type InfoHybrid = InfoHybridSingleFile | InfoHybridMultiFiles;
 /**
  * info
  */
-export type Info<T extends TorrentType | undefined = undefined> =
-  T extends TorrentType.V1
-    ? InfoV1
-    : T extends TorrentType.V2
-    ? InfoV2
-    : T extends TorrentType.HYBRID
-    ? InfoHybrid
-    : InfoV1 | InfoV2 | InfoHybrid;
+export type Info<T extends TorrentType = TorrentType> = T extends TorrentType.V1
+  ? InfoV1
+  : T extends TorrentType.V2
+  ? InfoV2
+  : T extends TorrentType.HYBRID
+  ? InfoHybrid
+  : InfoV1 | InfoV2 | InfoHybrid;
 
 //===================================================
 
