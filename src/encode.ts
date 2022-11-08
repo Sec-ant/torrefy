@@ -67,6 +67,7 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
   data: BData<false>;
   hooks: EncoderHooks | undefined;
   isHooking = false;
+  // TODO: Support array index number in path
   path: (string | ArrayBuffer)[] = [];
   constructor(data: BData<false>, hooks?: EncoderHooks) {
     this.data = data;

@@ -700,6 +700,7 @@ export async function create(
   let metaInfo: MetaInfo<TorrentType>;
 
   // construct meta info
+  // TODO: Refactor, modularize
   // v1
   if (iOpts.type === TorrentType.V1) {
     // destruct some options
@@ -1278,6 +1279,7 @@ function makeMerkleTreeBalancer(blocksPerPiece: number) {
 /**
  * Parse an array of files into a file tree
  * and return the sorted file nodes
+ * TODO: Refactor, improve types, reduce returned values, better api design
  * @param files an array of files
  * @returns file tree, file node map and common directory
  */
