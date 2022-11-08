@@ -705,7 +705,7 @@ export async function create(
     // destruct some options
     const { addPaddingFiles, sortFiles } = iOpts;
     // declare v1 piece readable stream
-    let v1PieceReadableStream: ReadableStream<Uint8Array>;
+    let v1PiecesReadableStream: ReadableStream<Uint8Array>;
     // declare common directory
     let commonDir: string | undefined;
     // handle files order
@@ -733,7 +733,7 @@ export async function create(
       // get last file index
       const lastFileIndex = files.length - 1;
       // hash each file and concatenate them into a single stream
-      v1PieceReadableStream = concatenateStreams(
+      v1PiecesReadableStream = concatenateStreams(
         files.map(async (file, fileIndex) =>
           getV1PieceLayerReadableStream(file.stream(), {
             pieceLength,
@@ -756,7 +756,7 @@ export async function create(
         files.map((file) => Promise.resolve(file.stream()))
       );
       // and then hash it
-      v1PieceReadableStream = getV1PieceLayerReadableStream(
+      v1PiecesReadableStream = getV1PieceLayerReadableStream(
         concatenatedFileReadableStream,
         {
           pieceLength,
@@ -794,7 +794,7 @@ export async function create(
         name,
         "piece length": pieceLength,
         // stream to array buffer
-        pieces: await new Response(v1PieceReadableStream).arrayBuffer(),
+        pieces: await new Response(v1PiecesReadableStream).arrayBuffer(),
         // only add private field when it is private
         ...(isPrivate && { private: 1 }),
       },
@@ -867,7 +867,7 @@ export async function create(
     // get last file index
     const lastFileIndex = files.length - 1;
     // declare v1 piece readable stream
-    const v1PieceReadableStreamPromises: Promise<ReadableStream>[] = [];
+    const v1PiecesReadableStreamPromises: Promise<ReadableStream>[] = [];
     // v1 and v2 hash
     await Promise.all(
       sortedFileNodes.map(async (fileNode, index) => {
@@ -876,7 +876,7 @@ export async function create(
         // we need to tee one stream into two streams for v1 and v2
         const [v1FileStream, v2FileStream] = file.stream().tee();
         // wrap v1 streams to promises for later concatenation
-        v1PieceReadableStreamPromises.push(
+        v1PiecesReadableStreamPromises.push(
           Promise.resolve(
             getV1PieceLayerReadableStream(v1FileStream, {
               pieceLength,
@@ -900,8 +900,8 @@ export async function create(
       })
     );
     // concatenate v1 hash streams
-    const v1PieceReadableStream = concatenateStreams(
-      v1PieceReadableStreamPromises
+    const v1PiecesReadableStream = concatenateStreams(
+      v1PiecesReadableStreamPromises
     ).stream;
     // add paddings to files list
     files = padFiles(files, pieceLength, commonDir);
@@ -936,7 +936,7 @@ export async function create(
         name,
         "piece length": pieceLength,
         // stream to array buffer
-        pieces: await new Response(v1PieceReadableStream).arrayBuffer(),
+        pieces: await new Response(v1PiecesReadableStream).arrayBuffer(),
         // only add private field when it is private
         ...(isPrivate && { private: 1 }),
       },
