@@ -3,7 +3,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "NodeNext",
-    "types": [],
+    "types": ["wicg-file-system-access"],
     "allowJs": true,
     "outDir": "dist",
     "declaration": true,
@@ -12,7 +12,8 @@
     "strict": true,
     "noImplicitAny": true,
     "noUnusedLocals": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noUncheckedIndexedAccess": true
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "test"]

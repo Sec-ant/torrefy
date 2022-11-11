@@ -13,12 +13,17 @@
   },
   "license": "MIT",
   "scripts": {
-    "clean": "rm -rf dist/*.js dist/*.d.ts",
-    "build": "npm run clean; webpack",
+    "clean": "rm -fr ./dist/*.*s",
+    "lint": "eslint ./src",
+    "build": "npm run lint && npm run clean && webpack",
     "serve": "http-server -c-1 dist"
   },
   "devDependencies": {
     "@types/uuid": "^8.3.4",
+    "@types/wicg-file-system-access": "^2020.9.5",
+    "@typescript-eslint/eslint-plugin": "^5.42.1",
+    "@typescript-eslint/parser": "^5.42.1",
+    "eslint": "^8.27.0",
     "http-server": "^14.1.1",
     "mocha": "^10.1.0",
     "ts-loader": "^9.4.1",

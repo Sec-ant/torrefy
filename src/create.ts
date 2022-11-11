@@ -1,18 +1,22 @@
 import { concatenate as concatenateStreams } from "workbox-streams";
 
+import { BlockHasher } from "./transformers/blockHasher.js";
+import { ChunkSplitter } from "./transformers/chunkSplitter.js";
+import { MerkleRootCalculator } from "./transformers/merkleRootCalculator.js";
+import { MerkleTreeBalancer } from "./transformers/merkleTreeBalancer.js";
+import { PieceHasher } from "./transformers/pieceHasher.js";
+
+import { BObject } from "./utils/codec.js";
 import {
-  getSortedIndex,
-  collapseAnnounceList,
-  getCommonDir,
-  padFiles,
-  nextPowerOfTwo,
-  merkleRoot,
-  decideName,
-  calculatePieceLength,
-} from "./utils.js";
-
-import { BDictionary } from "./encode.js";
-
+  FileAttrs,
+  FilesList,
+  FileTreeDirNode,
+  FileTreeFileNode,
+  populateFileTree,
+  resolveCommonDirAndTorrentName,
+} from "./utils/fileTree.js";
+import { FileDirLikes } from "./utils/fileDirLike.js";
+import { nextPowerOfTwo } from "./utils/misc.js";
 /**
  * support padding attribute on file
  */
@@ -161,165 +165,40 @@ export type TorrentOptions<T extends TorrentType = TorrentType> =
     ? TorrentOptionsV2
     : T extends TorrentType.HYBRID
     ? TorrentOptionsHybrid
-    : TorrentOptionsV1 | TorrentOptionsV2 | TorrentOptionsHybrid;
+    : never;
+
+type UnrequiredOptions = "announce" | "announceList" | "comment" | "name";
+// | "pieceLength";
+
+type InternalTorrentOptionsV1 = TorrentOptionsV1 &
+  Required<Omit<TorrentOptionsV1, UnrequiredOptions>>;
+
+type InternalTorrentOptionsV2 = TorrentOptionsV2 &
+  Required<Omit<TorrentOptionsV2, UnrequiredOptions>>;
+
+type InternalTorrentOptionsHybrid = TorrentOptionsHybrid &
+  Required<Omit<TorrentOptionsHybrid, UnrequiredOptions>>;
 
 /**
  * internal torrent options
  */
 type InternalTorrentOptions<T extends TorrentType = TorrentType> =
-  TorrentOptions<T> &
-    Required<
-      Omit<
-        TorrentOptions<T>,
-        "announce" | "announceList" | "comment" | "name" | "pieceLength"
-      >
-    >;
+  T extends TorrentType.V1
+    ? InternalTorrentOptionsV1
+    : T extends TorrentType.V2
+    ? InternalTorrentOptionsV2
+    : T extends TorrentType.HYBRID
+    ? InternalTorrentOptionsHybrid
+    : never;
 
 //===================================================================================
-
-/**
- * symlink file attribute
- */
-type SymlinkAttr = "s";
-
-/**
- * executable file attribute
- */
-type ExecutableAttr = "x";
-
-/**
- * hidden file attribute
- */
-type HiddenAttr = "h";
-
-/**
- * padding file attribute
- */
-type PaddingFileAttr = "p";
-
-/**
- * permutations template
- */
-type Permutations<T extends string, U extends string = T> = T extends any
-  ? T | `${T}${Permutations<Exclude<U, T>>}`
-  : never;
-
-/**
- * file attributes
- */
-export type FileAttrs = Permutations<
-  SymlinkAttr | ExecutableAttr | HiddenAttr | PaddingFileAttr
->;
-
-/**
- * base file props
- */
-type FilePropsBase = BDictionary<false> & {
-  /**
-   * Length of the file in bytes
-   *
-   * [BEP 3](https://www.bittorrent.org/beps/bep_0003.html#:~:text=the%20following%20keys%3A-,length,-%2D%20The%20length%20of)
-   * |
-   * [BEP 52](https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=pieces%20root32%3Aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaeeeeeee-,length,-Length%20of%20the)
-   */
-  length: number;
-  /**
-   * A variable-length string. When present,
-   * the characters each represent a file attribute:
-   * ```
-   * l = symlink
-   * x = executable
-   * h = hidden
-   * p = padding file
-   * ```
-   * [BEP 47](https://www.bittorrent.org/beps/bep_0047.html#:~:text=20%20bytes%3E%2C%0A%20%20%20%20...%0A%20%20%7D%2C%0A%20%20...%0A%7D-,attr,-A%20variable%2Dlength)
-   */
-  attr?: FileAttrs;
-};
-
-/**
- * v1 file props
- */
-export type FilePropsV1 = FilePropsBase & {
-  /**
-   * A list of UTF-8 encoded strings
-   * corresponding to **subdirectory** names
-   *
-   * [BEP 3](https://www.bittorrent.org/beps/bep_0003.html#:~:text=file%2C%20in%20bytes.-,path,-%2D%20A%20list%20of)
-   */
-  path: string[];
-};
-
-/**
- * v2 file props
- */
-export type FilePropsV2 = FilePropsBase & {
-  /**
-   * For **non-empty** files this is the the root hash
-   * of a merkle tree with a branching factor of 2,
-   * constructed from 16KiB blocks of the file
-   *
-   * [BEP 52](https://www.bittorrent.org/beps/bep_0052.html#:~:text=any%20sibling%20entries.-,pieces%20root,-For%20non%2Dempty)
-   */
-  ["pieces root"]?: ArrayBuffer;
-};
-
-/**
- * v1 file list
- */
-export type FilesList = FilePropsV1[];
-
-/**
- * v2 file node value
- */
-export type FileNodeValue = BDictionary<false> & {
-  /**
-   * Entries with zero-length keys describe the properties
-   * of the composed path at that point
-   *
-   * [BEP 52](https://www.bittorrent.org/beps/bep_0052.html#:~:text=Entries%20with%20zero%2Dlength%20keys%20describe%20the%20properties%20of%20the%20composed%20path%20at%20that%20point)
-   */
-  "": FilePropsV2;
-};
-
-/**
- * v2 file entry
- */
-type FileEntry = [key: string, value: FileNodeValue];
-
-/**
- * v2 dir node value
- */
-export type DirNodeValue = BDictionary<false> & {
-  [name: string]: DirNodeValue | FileNodeValue;
-};
-
-/**
- * v2 dir entry
- */
-type DirEntry = [key: string, value: Entries];
-
-/**
- * v2 file or dir entries
- */
-type Entries = (FileEntry | DirEntry)[];
-
-/**
- * v2 file node value => file map
- */
-type FileNodeMap = WeakMap<FileNodeValue, File>;
-
-/**
- * v2 file tree
- */
-export type FileTree = DirNodeValue;
 
 //===================================================================================
 
 /**
  * info base
  */
-type InfoBase = BDictionary<false> & {
+interface InfoBase extends BObject<false> {
   /**
    * The suggested name to save the file (or directory) as.
    * It is purely advisory
@@ -341,34 +220,34 @@ type InfoBase = BDictionary<false> & {
   /**
    * is private torrent
    */
-  private?: 0 | 1;
-};
+  private?: boolean;
+}
 
 /**
  * v1 info base
  */
-type InfoV1Base = InfoBase & {
+interface InfoV1Base extends InfoBase {
   /**
    * Pieces maps to a string whose length is a multiple of 20
    *
    * [BEP 3](https://www.bittorrent.org/beps/bep_0003.html#:~:text=M%20as%20default%29.-,pieces,-maps%20to%20a)
    */
   pieces: ArrayBuffer | string;
-};
+}
 
 /**
  * v1 single file info
  */
-type InfoV1SingleFile = InfoV1Base & {
+interface InfoV1SingleFile extends InfoV1Base {
   length: number;
-};
+}
 
 /**
  * v1 multi file info
  */
-type InfoV1MultiFiles = InfoV1Base & {
+interface InfoV1MultiFiles extends InfoV1Base {
   files: FilesList;
-};
+}
 
 /**
  * v1 info
@@ -378,14 +257,14 @@ type InfoV1 = InfoV1SingleFile | InfoV1MultiFiles;
 /**
  * v2 info
  */
-type InfoV2 = InfoBase & {
+interface InfoV2 extends InfoBase {
   /**
    * A tree of dictionaries where dictionary keys
    * represent UTF-8 encoded path elements
    *
    * [BEP 52](https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=about%20invalid%20files.-,file%20tree,-A%20tree%20of)
    */
-  ["file tree"]: FileTree;
+  ["file tree"]: FileTreeDirNode;
   /**
    * An integer value, set to 2 to indicate compatibility
    * with the current revision of this specification
@@ -393,17 +272,17 @@ type InfoV2 = InfoBase & {
    * [BEP 52](https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=an%20alignment%20gap.-,meta%20version,-An%20integer%20value)
    */
   ["meta version"]: number;
-};
+}
 
 /**
  * hybrid single file info
  */
-type InfoHybridSingleFile = InfoV1SingleFile & InfoV2;
+interface InfoHybridSingleFile extends InfoV1SingleFile, InfoV2 {}
 
 /**
  * hybrid multi file info
  */
-type InfoHybridMultiFiles = InfoV1MultiFiles & InfoV2;
+interface InfoHybridMultiFiles extends InfoV1MultiFiles, InfoV2 {}
 
 /**
  * hybrid info
@@ -419,7 +298,7 @@ export type Info<T extends TorrentType = TorrentType> = T extends TorrentType.V1
   ? InfoV2
   : T extends TorrentType.HYBRID
   ? InfoHybrid
-  : InfoV1 | InfoV2 | InfoHybrid;
+  : never;
 
 //===================================================
 
@@ -431,7 +310,7 @@ export type PieceLayers = Map<ArrayBuffer, ArrayBuffer>;
 /**
  * base meta info
  */
-type MetaInfoBase = BDictionary<false> & {
+interface MetaInfoBase extends BObject<false> {
   /**
    * The URL of the tracker
    *
@@ -466,41 +345,42 @@ type MetaInfoBase = BDictionary<false> & {
    * [BitTorrent Specification](https://courses.edsa-project.eu/pluginfile.php/1514/mod_resource/content/0/bitTorrent_part2.htm#:~:text=is%20here.-,creation%20date,-%3A%20%28optional%29%20the%20creation)
    */
   ["creation date"]?: number;
-};
+}
 
 /**
  * v1 meta info
  */
-type MetaInfoV1 = MetaInfoBase & {
+interface MetaInfoV1 extends MetaInfoBase {
   info: Info<TorrentType.V1>;
-};
+}
 
 /**
  * v2 meta info
  */
-type MetaInfoV2 = MetaInfoBase & {
+interface MetaInfoV2 extends MetaInfoBase {
   info: Info<TorrentType.V2>;
   ["piece layers"]?: PieceLayers;
-};
+}
 
 /**
  * hybrid meta info
  */
-type MetaInfoHybrid = MetaInfoV2 & {
+interface MetaInfoHybrid extends MetaInfoBase {
   info: Info<TorrentType.HYBRID>;
-};
+  ["piece layers"]?: PieceLayers;
+}
 
 /**
  * meta info
  */
-export type MetaInfo<T extends TorrentType | undefined = undefined> =
+export type MetaInfo<T extends TorrentType = TorrentType> =
   T extends TorrentType.V1
     ? MetaInfoV1
     : T extends TorrentType.V2
     ? MetaInfoV2
     : T extends TorrentType.HYBRID
     ? MetaInfoHybrid
-    : MetaInfoV1 | MetaInfoV2 | MetaInfoHybrid;
+    : never;
 
 /**
  * default block length 1 << 14 = 16384
@@ -527,11 +407,6 @@ export enum CommonPieceLength {
 }
 
 /**
- * 32-byte-zeros
- */
-const ZEROS_32_BYTES = new Uint8Array(32);
-
-/**
  * current meta version = 2
  */
 const CURRENT_META_VERSION: MetaVersion = 2;
@@ -545,6 +420,7 @@ const defaultTorrentOptionsV1: InternalTorrentOptions<TorrentType.V1> = {
   addCreationDate: true,
   addPaddingFiles: false,
   blockLength: DEFAULT_BLOCK_LENGTH,
+  pieceLength: NaN,
   sortFiles: true,
   isPrivate: false,
 };
@@ -557,6 +433,7 @@ const defaultTorrentOptionsV2: InternalTorrentOptions<TorrentType.V2> = {
   addCreatedBy: true,
   addCreationDate: true,
   blockLength: DEFAULT_BLOCK_LENGTH,
+  pieceLength: NaN,
   metaVersion: CURRENT_META_VERSION,
   isPrivate: false,
 };
@@ -570,6 +447,7 @@ const defaultTorrentOptionsHybrid: InternalTorrentOptions<TorrentType.HYBRID> =
     addCreatedBy: true,
     addCreationDate: true,
     blockLength: DEFAULT_BLOCK_LENGTH,
+    pieceLength: NaN,
     metaVersion: CURRENT_META_VERSION,
     isPrivate: false,
   };
@@ -579,370 +457,442 @@ export type OnProgress = (
   total: number
 ) => void | Promise<void>;
 
-/**
- * Create a torrent, returns meta info
- * @param files
- * @param opts
- * @param onProgress
- * @returns
- */
-export async function create(
-  files: File[],
-  opts: TorrentOptions = { type: TorrentType.V1 },
+function getTotalPieces(iterableFiles: Iterable<File>, pieceLength: number) {
+  let totalPieces = 0;
+  for (const file of iterableFiles) {
+    totalPieces += Math.ceil(file.size / pieceLength);
+  }
+  return totalPieces;
+}
+
+async function createV1(
+  fileDirLikes: FileDirLikes,
+  opts: TorrentOptions<TorrentType.V1>,
   onProgress?: OnProgress
-): Promise<MetaInfo<TorrentType>> {
-  // empty file list will throw error
-  if (files.length === 0) {
-    throw new Error("empty file list");
+) {
+  // assign options
+  const iOpts: InternalTorrentOptions<TorrentType.V1> = {
+    ...defaultTorrentOptionsV1,
+    ...opts,
+  };
+  // build file tree
+  const { fileTree, traverseTree, totalFileCount, totalFileSize } =
+    await populateFileTree(fileDirLikes, {
+      sort: iOpts.sortFiles,
+    });
+  // early exit
+  if (totalFileCount === 0) {
+    return;
   }
-
-  // declare internal torrent options
-  let iOpts: InternalTorrentOptions;
-
-  // assign internal torrent options
-  switch (opts.type) {
-    case TorrentType.V1:
-      iOpts = { ...defaultTorrentOptionsV1, ...opts };
-      break;
-    case TorrentType.V2:
-      iOpts = { ...defaultTorrentOptionsV2, ...opts };
-      break;
-    case TorrentType.HYBRID:
-      iOpts = { ...defaultTorrentOptionsHybrid, ...opts };
-      break;
+  // get all files
+  const files: File[] = [];
+  for (const [, file] of traverseTree(fileTree)) {
+    files.push(file);
   }
-
-  // auto calculate piece length if not assigned
-  iOpts.pieceLength ??= calculatePieceLength(
-    files.reduce((sum, file) => sum + file.size, 0),
-    iOpts.blockLength
-  );
-
-  // destruct some internal torrent options
-  let {
-    addCreatedBy,
-    addCreationDate,
-    blockLength,
-    comment,
-    isPrivate,
-    name,
-    pieceLength,
-  } = iOpts;
-
-  // Piece length cannot be smaller than block length
-  // in v2 or hybrid torrents
-  // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=of%20two%20and-,at%20least%2016KiB,-.
-  if (iOpts.type !== TorrentType.V1 && pieceLength < blockLength) {
-    throw new Error(
-      `piece length ${pieceLength} is smaller than block length ${blockLength}`
-    );
+  // auto calculate piece length
+  if (isNaN(iOpts.pieceLength)) {
+    // auto calculate piece length if not assigned
+    iOpts.pieceLength = calculatePieceLength(totalFileSize, iOpts.blockLength);
   }
-
-  // Piece length is almost always a power of two in v1 torrents,
-  // and must be a power of two in v2 or hybrid torrents.
-  // For the sake of clarity and compatibility,
-  // a power of two is mandatory
+  // Piece length is almost always a power of two in v1 torrents
   // https://www.bittorrent.org/beps/bep_0003.html#:~:text=piece%20length%20is%20almost%20always%20a%20power%20of%20two
-  // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=It%20must%20be%20a%20power%20of%20two
-  if ((pieceLength & (pieceLength - 1)) !== 0) {
-    throw new Error(`piece length ${pieceLength} is not a power of 2`);
+  if ((iOpts.pieceLength & (iOpts.pieceLength - 1)) !== 0) {
+    console.warn(`piece length ${iOpts.pieceLength} is not a power of 2`);
   }
-
-  // calculate blocks per piece
-  const blocksPerPiece = pieceLength / blockLength;
-
   // collapse announce list
   iOpts.announceList = collapseAnnounceList(iOpts.announceList);
-
   // auto assign announce if possible
   if (
     typeof iOpts.announce === "undefined" &&
     typeof iOpts.announceList !== "undefined"
   ) {
-    iOpts.announce = iOpts.announceList[0][0];
+    iOpts.announce = iOpts.announceList[0]?.[0];
   }
+  // progress hook
+  const [progressRef, updateProgress] = useProgress(0, onProgress);
+  // torrent name and common dir
+  const { commonDir, name } = resolveCommonDirAndTorrentName(
+    iOpts.name,
+    fileTree
+  );
+  iOpts.name = name;
+  // declare v1 piece readable stream
+  let v1PiecesReadableStream: ReadableStream<Uint8Array>;
+  // add padding files
+  if (iOpts.addPaddingFiles) {
+    // assign progress total (in piece unit)
+    const totalPieces = getTotalPieces(files, iOpts.pieceLength);
+    progressRef.total = totalPieces;
 
-  // destruct some internal options
-  const { announce, announceList } = iOpts;
-
-  // init meta info base
-  const metaInfoBase: MetaInfoBase = {
-    ...(announce && { announce: announce }),
-    ...(announceList && { "announce-list": announceList }),
-    ...(comment && { comment: comment }),
-    ...(addCreatedBy && { "created by": CREATED_BY }),
-    ...(addCreationDate && { "creation date": (Date.now() / 1000) >> 0 }),
-  };
-
-  // init progress parameters
-  const progressParams = {
-    // progress current (in piece unit)
-    current: 0,
-    // progress total (in piece unit)
-    total: files.reduce((size, file) => {
-      return size + Math.ceil(file.size / pieceLength);
-    }, 0),
-  };
-
-  // update progress
-  const updateProgress = () => {
-    if (onProgress) {
-      onProgress(progressParams.current++, progressParams.total);
-    }
-  };
-
-  let metaInfo: MetaInfo<TorrentType>;
-
-  // construct meta info
-  // TODO: Refactor, modularize
-  // v1
-  if (iOpts.type === TorrentType.V1) {
-    // destruct some options
-    const { addPaddingFiles, sortFiles } = iOpts;
-    // declare v1 piece readable stream
-    let v1PiecesReadableStream: ReadableStream<Uint8Array>;
-    // declare common directory
-    let commonDir: string | undefined;
-    // handle files order
-    if (sortFiles) {
-      // parse files as file tree, common directory is also parsed
-      const {
-        sortedFileNodes,
-        fileNodeMap,
-        commonDir: _commonDir,
-      } = parseFileTree(files);
-      // reorder files
-      files = sortedFileNodes.map(
-        (fileNode) => fileNodeMap.get(fileNode) as File
-      );
-      // assign common directory
-      commonDir = _commonDir;
-    } else {
-      // only parse common directory
-      commonDir = getCommonDir(files);
-    }
-    // update name
-    iOpts.name = name = decideName(name, commonDir, files);
-    // handle padding files
-    if (addPaddingFiles) {
-      // get last file index
-      const lastFileIndex = files.length - 1;
-      // hash each file and concatenate them into a single stream
-      v1PiecesReadableStream = concatenateStreams(
-        files.map(async (file, fileIndex) =>
+    const pieceLayerReadableStreamPromise: Promise<
+      ReadableStream<Uint8Array>
+    >[] = [];
+    const lastFileIndex = totalFileCount - 1;
+    for (let fileIndex = lastFileIndex; fileIndex >= 0; --fileIndex) {
+      const file = files[fileIndex] as File;
+      pieceLayerReadableStreamPromise.unshift(
+        Promise.resolve(
           getV1PieceLayerReadableStream(file.stream(), {
-            pieceLength,
+            pieceLength: iOpts.pieceLength,
             padding: fileIndex !== lastFileIndex,
             updateProgress,
           })
         )
-      ).stream;
-      // add paddings to files list
-      files = padFiles(files, pieceLength, commonDir);
-    } else {
-      // reassign progress total (in piece unit)
-      progressParams.total = Math.ceil(
-        files.reduce((size, file) => {
-          return size + file.size;
-        }, 0) / pieceLength
       );
-      // concatenate all files into a single stream first
-      const { stream: concatenatedFileReadableStream } = concatenateStreams(
-        files.map((file) => Promise.resolve(file.stream()))
-      );
-      // and then hash it
-      v1PiecesReadableStream = getV1PieceLayerReadableStream(
-        concatenatedFileReadableStream,
+      if (fileIndex === lastFileIndex) {
+        continue;
+      }
+      const remainderSize = file.size % iOpts.pieceLength;
+      if (remainderSize === 0) {
+        continue;
+      }
+      const paddingSize = iOpts.pieceLength - remainderSize;
+      const paddingFile = createPaddingFile(paddingSize, commonDir);
+      files.splice(fileIndex + 1, 0, paddingFile);
+    }
+    v1PiecesReadableStream = concatenateStreams(pieceLayerReadableStreamPromise)
+      .stream as ReadableStream<Uint8Array>;
+  }
+  // no padding files
+  else {
+    // assign progress total (in piece unit)
+    const totalPieces = Math.ceil(totalFileSize / iOpts.pieceLength);
+    progressRef.total = totalPieces;
+
+    // concatenate all files into a single stream first
+    const {
+      stream: concatenatedFileReadableStream,
+    }: { stream: ReadableStream<Uint8Array> } = concatenateStreams(
+      files.map((file) => Promise.resolve(file.stream()))
+    );
+    // and then hash it
+    v1PiecesReadableStream = getV1PieceLayerReadableStream(
+      concatenatedFileReadableStream,
+      {
+        pieceLength: iOpts.pieceLength,
+        padding: false,
+        updateProgress,
+      }
+    );
+  }
+
+  const metaInfo: MetaInfo<TorrentType.V1> = {
+    ...(typeof iOpts.announce === "undefined"
+      ? {}
+      : { announce: iOpts.announce }),
+    ...(typeof iOpts.announceList === "undefined"
+      ? {}
+      : { "announce-list": iOpts.announceList }),
+    ...(typeof iOpts.comment === "undefined" ? {} : { comment: iOpts.comment }),
+    ...(iOpts.addCreatedBy ? { "created by": CREATED_BY } : {}),
+    ...(iOpts.addCreationDate
+      ? { "creation date": (Date.now() / 1000) >> 0 }
+      : {}),
+    info: {
+      ...(totalFileSize > 1
+        ? {
+            files: files.map((file) => {
+              // get file path segments
+              const filePath = (file.webkitRelativePath || file.name).split(
+                "/"
+              );
+              // remove common dir
+              if (typeof commonDir !== "undefined") {
+                filePath.shift();
+              }
+              // emit
+              return {
+                ...(file.padding ? { attr: "p" as FileAttrs } : {}),
+                length: file.size,
+                path: filePath,
+              };
+            }),
+          }
+        : {
+            length: totalFileSize,
+          }),
+      name: iOpts.name,
+      "piece length": iOpts.pieceLength,
+      pieces: await new Response(v1PiecesReadableStream).arrayBuffer(),
+      ...(iOpts.isPrivate ? { private: true } : {}),
+    },
+  };
+
+  return metaInfo;
+}
+
+async function createV2(
+  fileDirLikes: FileDirLikes,
+  opts: TorrentOptions<TorrentType.V2>,
+  onProgress?: OnProgress
+) {
+  // assign options
+  const iOpts: InternalTorrentOptions<TorrentType.V2> = {
+    ...defaultTorrentOptionsV2,
+    ...opts,
+  };
+  // build file tree
+  const { fileTree, traverseTree, totalFileCount, totalFileSize } =
+    await populateFileTree(fileDirLikes);
+  // early exit
+  if (totalFileCount === 0) {
+    return;
+  }
+  // get all files
+  const files: File[] = [];
+  const fileNodeToFileEntries: [FileTreeFileNode, File][] = [];
+  for (const [fileNode, file] of traverseTree(fileTree)) {
+    files.push(file);
+    fileNodeToFileEntries.push([fileNode, file]);
+  }
+  // auto calculate piece length
+  if (isNaN(iOpts.pieceLength)) {
+    // auto calculate piece length if not assigned
+    iOpts.pieceLength = calculatePieceLength(totalFileSize, iOpts.blockLength);
+  }
+  // Piece length cannot be smaller than block length in v2 torrents
+  // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=of%20two%20and-,at%20least%2016KiB,-.
+  if (iOpts.pieceLength < iOpts.blockLength) {
+    throw new Error(
+      `piece length ${iOpts.pieceLength} is smaller than block length ${iOpts.blockLength}`
+    );
+  }
+  // Piece length must be a power of two in v2 torrents.
+  // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=It%20must%20be%20a%20power%20of%20two
+  if ((iOpts.pieceLength & (iOpts.pieceLength - 1)) !== 0) {
+    throw new Error(`piece length ${iOpts.pieceLength} is not a power of 2`);
+  }
+  // calculate blocks per piece
+  const blocksPerPiece = iOpts.pieceLength / iOpts.blockLength;
+  // collapse announce list
+  iOpts.announceList = collapseAnnounceList(iOpts.announceList);
+  // auto assign announce if possible
+  if (
+    typeof iOpts.announce === "undefined" &&
+    typeof iOpts.announceList !== "undefined"
+  ) {
+    iOpts.announce = iOpts.announceList[0]?.[0];
+  }
+  // progress hook
+  const [, updateProgress] = useProgress(0, onProgress);
+  // torrent name
+  const { name } = resolveCommonDirAndTorrentName(iOpts.name, fileTree);
+  iOpts.name = name;
+  // init piece layers
+  const pieceLayers: PieceLayers = new Map();
+  // populate piece layers and file nodes
+  await Promise.all(
+    fileNodeToFileEntries.map(async ([fileNode, file]) => {
+      await populatePieceLayersAndFileNodes(
+        file.stream(),
+        pieceLayers,
+        fileNode,
         {
-          pieceLength,
-          padding: false,
+          blockLength: iOpts.blockLength,
+          pieceLength: iOpts.pieceLength,
+          blocksPerPiece,
           updateProgress,
         }
       );
-    }
-    // populate meta info
-    metaInfo = {
-      ...metaInfoBase,
-      info: {
-        ...(files.length > 1
-          ? {
-              files: files.map((file) => {
-                // get file path segments
-                const filePath = (file.webkitRelativePath || file.name).split(
-                  "/"
-                );
-                // remove common dir
-                if (typeof commonDir !== "undefined") {
-                  filePath.shift();
-                }
-                // emit
-                return {
-                  ...(file.padding && { attr: "p" }),
-                  length: file.size,
-                  path: filePath,
-                };
-              }),
-            }
-          : {
-              length: files[0].size,
-            }),
-        name,
-        "piece length": pieceLength,
-        // stream to array buffer
-        pieces: await new Response(v1PiecesReadableStream).arrayBuffer(),
-        // only add private field when it is private
-        ...(isPrivate && { private: 1 }),
-      },
-    } as MetaInfo<TorrentType.V1>;
-  }
-  // v2
-  else if (iOpts.type === TorrentType.V2) {
-    // destruct some options
-    const { metaVersion } = iOpts;
-    // parse files as file tree, common directory is also parsed
-    const { fileTree, sortedFileNodes, fileNodeMap, commonDir } =
-      parseFileTree(files);
-    // get sorted files
-    files = sortedFileNodes.map(
-      (fileNode) => fileNodeMap.get(fileNode) as File
-    );
-    // init piece layers
-    const pieceLayers: PieceLayers = new Map();
-    // update name
-    iOpts.name = name = decideName(name, commonDir, files);
-    // bring piece layers into hash work
-    await Promise.all(
-      sortedFileNodes.map(async (fileNode, index) => {
-        const file = files[index];
-        await populatePieceLayersAndFileNode(
-          file.stream(),
-          pieceLayers,
-          fileNode,
-          {
-            blockLength,
-            pieceLength,
-            blocksPerPiece,
-            updateProgress,
-          }
-        );
-      })
-    );
-    // populate meta info
-    metaInfo = {
-      ...metaInfoBase,
-      info: {
-        ["file tree"]: fileTree,
-        "meta version": metaVersion,
-        name,
-        "piece length": pieceLength,
-        // only add private field when it is private
-        ...(isPrivate && { private: 1 }),
-      },
-      // add piece layers if any
-      ...(pieceLayers.size > 0 && { "piece layers": pieceLayers }),
-    } as MetaInfo<TorrentType.V2>;
-  }
-  // hybrid
-  else if (iOpts.type === TorrentType.HYBRID) {
-    // destruct some options
-    const { metaVersion } = iOpts;
-    // parse files as file tree, common directory is also parsed
-    const { fileTree, sortedFileNodes, fileNodeMap, commonDir } =
-      parseFileTree(files);
-    // get sorted files
-    files = sortedFileNodes.map(
-      (fileNode) => fileNodeMap.get(fileNode) as File
-    );
-    // init piece layers
-    const pieceLayers: PieceLayers = new Map();
-    // update name
-    iOpts.name = name = decideName(name, commonDir, files);
-    // double total in progress because we have v1 and v2 pieces
-    progressParams.total *= 2;
-    // get last file index
-    const lastFileIndex = files.length - 1;
-    // declare v1 piece readable stream
-    const v1PiecesReadableStreamPromises: Promise<ReadableStream>[] = [];
-    // v1 and v2 hash
-    await Promise.all(
-      sortedFileNodes.map(async (fileNode, index) => {
-        // get file
-        const file = files[index];
-        // we need to tee one stream into two streams for v1 and v2
-        const [v1FileStream, v2FileStream] = file.stream().tee();
-        // wrap v1 streams to promises for later concatenation
-        v1PiecesReadableStreamPromises.push(
-          Promise.resolve(
-            getV1PieceLayerReadableStream(v1FileStream, {
-              pieceLength,
-              padding: index !== lastFileIndex,
-              updateProgress,
-            })
-          )
-        );
-        // v2
-        await populatePieceLayersAndFileNode(
-          v2FileStream,
-          pieceLayers,
-          fileNode,
-          {
-            blockLength,
-            pieceLength,
-            blocksPerPiece,
-            updateProgress,
-          }
-        );
-      })
-    );
-    // concatenate v1 hash streams
-    const v1PiecesReadableStream = concatenateStreams(
-      v1PiecesReadableStreamPromises
-    ).stream;
-    // add paddings to files list
-    files = padFiles(files, pieceLength, commonDir);
-    // populate meta info
-    metaInfo = {
-      ...metaInfoBase,
-      info: {
-        ["file tree"]: fileTree,
-        ...(files.length > 1
-          ? {
-              files: files.map((file) => {
-                // get file path segments
-                const filePath = (file.webkitRelativePath || file.name).split(
-                  "/"
-                );
-                // remove common dir
-                if (typeof commonDir !== "undefined") {
-                  filePath.shift();
-                }
-                // emit
-                return {
-                  ...(file.padding && { attr: "p" }),
-                  length: file.size,
-                  path: filePath,
-                };
-              }),
-            }
-          : {
-              length: files[0].size,
-            }),
-        "meta version": metaVersion,
-        name,
-        "piece length": pieceLength,
-        // stream to array buffer
-        pieces: await new Response(v1PiecesReadableStream).arrayBuffer(),
-        // only add private field when it is private
-        ...(isPrivate && { private: 1 }),
-      },
-      // add piece layers if any
-      ...(pieceLayers.size > 0 && { "piece layers": pieceLayers }),
-    } as MetaInfo<TorrentType.HYBRID>;
-  } else {
-    throw new Error(`torrent type is not supported`);
-  }
+    })
+  );
+
+  const metaInfo: MetaInfo<TorrentType.V2> = {
+    ...(typeof iOpts.announce === "undefined"
+      ? {}
+      : { announce: iOpts.announce }),
+    ...(typeof iOpts.announceList === "undefined"
+      ? {}
+      : { "announce-list": iOpts.announceList }),
+    ...(typeof iOpts.comment === "undefined" ? {} : { comment: iOpts.comment }),
+    ...(iOpts.addCreatedBy ? { "created by": CREATED_BY } : {}),
+    ...(iOpts.addCreationDate
+      ? { "creation date": (Date.now() / 1000) >> 0 }
+      : {}),
+    info: {
+      ["file tree"]: fileTree,
+      "meta version": iOpts.metaVersion,
+      name: iOpts.name,
+      "piece length": iOpts.pieceLength,
+      // only add private field when it is private
+      ...(iOpts.isPrivate ? { private: true } : {}),
+    },
+    // add piece layers if any
+    ...(pieceLayers.size > 0 && { "piece layers": pieceLayers }),
+  };
 
   return metaInfo;
+}
+
+async function createHybrid(
+  fileDirLikes: FileDirLikes,
+  opts: TorrentOptions<TorrentType.HYBRID>,
+  onProgress?: OnProgress
+) {
+  // assign options
+  const iOpts: InternalTorrentOptions<TorrentType.HYBRID> = {
+    ...defaultTorrentOptionsHybrid,
+    ...opts,
+  };
+  // build file tree
+  const { fileTree, traverseTree, totalFileCount, totalFileSize } =
+    await populateFileTree(fileDirLikes);
+  // early exit
+  if (totalFileCount === 0) {
+    return;
+  }
+  // get all files
+  const files: File[] = [];
+  const fileNodeToFileEntries: [FileTreeFileNode, File][] = [];
+  for (const [fileNode, file] of traverseTree(fileTree)) {
+    files.push(file);
+    fileNodeToFileEntries.push([fileNode, file]);
+  }
+  // auto calculate piece length
+  if (isNaN(iOpts.pieceLength)) {
+    // auto calculate piece length if not assigned
+    iOpts.pieceLength = calculatePieceLength(totalFileSize, iOpts.blockLength);
+  }
+  // Piece length cannot be smaller than block length in hybrid torrents
+  // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=of%20two%20and-,at%20least%2016KiB,-.
+  if (iOpts.pieceLength < iOpts.blockLength) {
+    throw new Error(
+      `piece length ${iOpts.pieceLength} is smaller than block length ${iOpts.blockLength}`
+    );
+  }
+  // Piece length must be a power of two in hybrid torrents.
+  // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=It%20must%20be%20a%20power%20of%20two
+  if ((iOpts.pieceLength & (iOpts.pieceLength - 1)) !== 0) {
+    throw new Error(`piece length ${iOpts.pieceLength} is not a power of 2`);
+  }
+  // calculate blocks per piece
+  const blocksPerPiece = iOpts.pieceLength / iOpts.blockLength;
+  // collapse announce list
+  iOpts.announceList = collapseAnnounceList(iOpts.announceList);
+  // auto assign announce if possible
+  if (
+    typeof iOpts.announce === "undefined" &&
+    typeof iOpts.announceList !== "undefined"
+  ) {
+    iOpts.announce = iOpts.announceList[0]?.[0];
+  }
+  // progress hook
+  const [, updateProgress] = useProgress(
+    getTotalPieces(files, iOpts.pieceLength) * 2,
+    onProgress
+  );
+  // torrent name
+  const { commonDir, name } = resolveCommonDirAndTorrentName(
+    iOpts.name,
+    fileTree
+  );
+  iOpts.name = name;
+  // init piece layers
+  const pieceLayers: PieceLayers = new Map();
+
+  const pieceLayerReadableStreamPromise: Promise<ReadableStream<Uint8Array>>[] =
+    [];
+  const lastFileIndex = totalFileCount - 1;
+  let fileIndex = -1;
+  for (const [fileNode, file] of fileNodeToFileEntries) {
+    ++fileIndex;
+    // we need to tee one stream into two streams for v1 and v2
+    const [v1FileStream, v2FileStream] = file.stream().tee();
+    pieceLayerReadableStreamPromise.unshift(
+      Promise.resolve(
+        getV1PieceLayerReadableStream(v1FileStream, {
+          pieceLength: iOpts.pieceLength,
+          padding: fileIndex !== lastFileIndex,
+          updateProgress,
+        })
+      )
+    );
+    // v2
+    await populatePieceLayersAndFileNodes(v2FileStream, pieceLayers, fileNode, {
+      blockLength: iOpts.blockLength,
+      pieceLength: iOpts.pieceLength,
+      blocksPerPiece,
+      updateProgress,
+    });
+    if (fileIndex === lastFileIndex) {
+      break;
+    }
+    const remainderSize = file.size % iOpts.pieceLength;
+    if (remainderSize === 0) {
+      continue;
+    }
+    const paddingSize = iOpts.pieceLength - remainderSize;
+    const paddingFile = createPaddingFile(paddingSize, commonDir);
+    files.splice(fileIndex + 1, 0, paddingFile);
+  }
+  const v1PiecesReadableStream = concatenateStreams(
+    pieceLayerReadableStreamPromise
+  ).stream as ReadableStream<Uint8Array>;
+
+  const metaInfo: MetaInfo<TorrentType.HYBRID> = {
+    ...(typeof iOpts.announce === "undefined"
+      ? {}
+      : { announce: iOpts.announce }),
+    ...(typeof iOpts.announceList === "undefined"
+      ? {}
+      : { "announce-list": iOpts.announceList }),
+    ...(typeof iOpts.comment === "undefined" ? {} : { comment: iOpts.comment }),
+    ...(iOpts.addCreatedBy ? { "created by": CREATED_BY } : {}),
+    ...(iOpts.addCreationDate
+      ? { "creation date": (Date.now() / 1000) >> 0 }
+      : {}),
+    info: {
+      "file tree": fileTree,
+      ...(totalFileSize > 1
+        ? {
+            files: files.map((file) => {
+              // get file path segments
+              const filePath = (file.webkitRelativePath || file.name).split(
+                "/"
+              );
+              // remove common dir
+              if (typeof commonDir !== "undefined") {
+                filePath.shift();
+              }
+              // emit
+              return {
+                ...(file.padding ? { attr: "p" as FileAttrs } : {}),
+                length: file.size,
+                path: filePath,
+              };
+            }),
+          }
+        : {
+            length: totalFileSize,
+          }),
+      "meta version": iOpts.metaVersion,
+      name: iOpts.name,
+      "piece length": iOpts.pieceLength,
+      // stream to array buffer
+      pieces: await new Response(v1PiecesReadableStream).arrayBuffer(),
+      // only add private field when it is private
+      ...(iOpts.isPrivate ? { private: true } : {}),
+    },
+    // add piece layers if any
+    ...(pieceLayers.size > 0 && { "piece layers": pieceLayers }),
+  };
+
+  return metaInfo;
+}
+
+export async function create(
+  fileDirLikes: FileDirLikes,
+  opts: TorrentOptions = { type: TorrentType.V1 },
+  onProgress?: OnProgress
+) {
+  switch (opts.type) {
+    case TorrentType.V1:
+      return await createV1(fileDirLikes, opts, onProgress);
+    case TorrentType.V2:
+      return await createV2(fileDirLikes, opts, onProgress);
+    case TorrentType.HYBRID:
+      return await createHybrid(fileDirLikes, opts, onProgress);
+  }
 }
 
 /**
@@ -952,10 +902,10 @@ export async function create(
  * @param fileNode
  * @param opts
  */
-async function populatePieceLayersAndFileNode(
+async function populatePieceLayersAndFileNodes(
   fileStream: ReadableStream<Uint8Array>,
   pieceLayers: PieceLayers,
-  fileNode: FileNodeValue,
+  fileNode: FileTreeFileNode,
   opts: {
     blockLength: number;
     pieceLength: number;
@@ -1004,11 +954,11 @@ function getV1PieceLayerReadableStream(
 ): ReadableStream<Uint8Array> {
   const pieceLayerReadableStream = stream
     .pipeThrough(
-      makeChunkSplitter(opts.pieceLength, {
+      new ChunkSplitter(opts.pieceLength, {
         padding: opts.padding,
       })
     )
-    .pipeThrough(makePieceHasher(opts.updateProgress));
+    .pipeThrough(new PieceHasher(opts.updateProgress));
   return pieceLayerReadableStream;
 }
 
@@ -1027,331 +977,103 @@ function getV2PiecesRootAndPieceLayerReadableStreams(
   }
 ) {
   const pieceLayerReadableStream: ReadableStream<Uint8Array> = stream
-    .pipeThrough(makeChunkSplitter(opts.blockLength))
-    .pipeThrough(makeBlockHasher(opts.blocksPerPiece))
-    .pipeThrough(makeMerkleRootCalculator(opts.updateProgress));
+    .pipeThrough(new ChunkSplitter(opts.blockLength))
+    .pipeThrough(new BlockHasher(opts.blocksPerPiece))
+    .pipeThrough(new MerkleRootCalculator(opts.updateProgress));
 
   const [pl1ReadableStream, pl2ReadableStream] = pieceLayerReadableStream.tee();
 
   return {
     piecesRootReadableStream: pl2ReadableStream
-      .pipeThrough(makeMerkleTreeBalancer(opts.blocksPerPiece))
-      .pipeThrough(makeMerkleRootCalculator()),
+      .pipeThrough(new MerkleTreeBalancer(opts.blocksPerPiece))
+      .pipeThrough(new MerkleRootCalculator()),
     pieceLayerReadableStream: pl1ReadableStream,
   };
 }
 
-/**
- * Chunk splitter transformer class
- */
-class ChunkSplitterTransformer implements Transformer<Uint8Array, Uint8Array> {
-  residuePointer = 0;
-  chunkLength;
-  residue;
-  opts;
-  constructor(chunkLength: number, opts = { padding: false }) {
-    this.chunkLength = chunkLength;
-    this.opts = opts;
-    this.residue = new Uint8Array(this.chunkLength);
-  }
-  transform(
-    chunk: Uint8Array,
-    controller: TransformStreamDefaultController<Uint8Array>
-  ) {
-    while (this.residuePointer + chunk.byteLength >= this.chunkLength) {
-      const chunkEnd = this.chunkLength - this.residuePointer;
-      this.residue.set(chunk.subarray(0, chunkEnd), this.residuePointer);
-      this.residuePointer = 0;
-      controller.enqueue(new Uint8Array(this.residue));
-      chunk = chunk.subarray(chunkEnd);
+function createPaddingFile(paddingSize: number, commonDir: string | undefined) {
+  const paddingFile = new File(
+    [new ArrayBuffer(paddingSize)],
+    `${paddingSize}`,
+    {
+      type: "application/octet-stream",
     }
-    this.residue.set(chunk, this.residuePointer);
-    this.residuePointer += chunk.byteLength;
-  }
-  flush(controller: TransformStreamDefaultController<Uint8Array>) {
-    if (this.residuePointer <= 0) {
-      return;
-    }
-    if (this.opts.padding) {
-      this.residue.set(
-        new Uint8Array(this.chunkLength - this.residuePointer),
-        this.residuePointer
-      );
-      controller.enqueue(this.residue);
-    } else {
-      controller.enqueue(this.residue.subarray(0, this.residuePointer));
-    }
-  }
-}
-
-/**
- * Make a chunk splitter transform stream
- * @param chunkLength block length
- * @param opts options
- * @returns chunk splitter transform stream
- */
-function makeChunkSplitter(chunkLength: number, opts = { padding: false }) {
-  return new TransformStream(new ChunkSplitterTransformer(chunkLength, opts));
-}
-
-/**
- * Piece hasher transformer class
- */
-class PieceHasherTransformer implements Transformer<Uint8Array, Uint8Array> {
-  updateProgress;
-  constructor(updateProgress?: () => void) {
-    this.updateProgress = updateProgress;
-  }
-  async transform(
-    chunk: Uint8Array,
-    controller: TransformStreamDefaultController<Uint8Array>
-  ) {
-    let pieceHash: Uint8Array;
-    try {
-      pieceHash = new Uint8Array(await crypto.subtle.digest("SHA-1", chunk));
-    } catch {
-      const { default: jsSHA1 } = await import("jssha/sha1");
-      const sha1Obj = new jsSHA1("SHA-1", "UINT8ARRAY");
-      sha1Obj.update(chunk);
-      pieceHash = sha1Obj.getHash("UINT8ARRAY");
-    }
-    controller.enqueue(pieceHash);
-    if (this.updateProgress) {
-      this.updateProgress();
-    }
-  }
-}
-
-/**
- * Make a piece hasher transform stream
- * @param updateProgress
- * @returns piece hasher transform stream
- */
-function makePieceHasher(updateProgress?: () => void) {
-  return new TransformStream(new PieceHasherTransformer(updateProgress));
-}
-
-/**
- * Block hasher transformer class
- */
-class BlockHasherTransformer implements Transformer<Uint8Array, Uint8Array[]> {
-  blockCount = 0;
-  merkleLeaves: Uint8Array[] = [];
-  blocksPerPiece;
-  constructor(blocksPerPiece: number) {
-    this.blocksPerPiece = blocksPerPiece;
-  }
-  async transform(
-    chunk: Uint8Array,
-    controller: TransformStreamDefaultController<Uint8Array[]>
-  ) {
-    ++this.blockCount;
-    let blockHash: Uint8Array;
-    try {
-      blockHash = new Uint8Array(await crypto.subtle.digest("SHA-256", chunk));
-    } catch {
-      const { default: jsSHA256 } = await import("jssha/sha256");
-      const sha256Obj = new jsSHA256("SHA-256", "UINT8ARRAY");
-      sha256Obj.update(chunk);
-      blockHash = sha256Obj.getHash("UINT8ARRAY");
-    }
-    this.merkleLeaves.push(blockHash);
-    if (this.merkleLeaves.length === this.blocksPerPiece) {
-      controller.enqueue(this.merkleLeaves);
-      this.merkleLeaves = [];
-    }
-  }
-  async flush(controller: TransformStreamDefaultController<Uint8Array[]>) {
-    if (this.blockCount === 0) {
-      return;
-    }
-    // http://bittorrent.org/beps/bep_0052.html#:~:text=The%20remaining%20leaf%20hashes%20beyond%20the%20end%20of%20the%20file%20required%20to%20construct%20upper%20layers%20of%20the%20merkle%20tree%20are%20set%20to%20zero
-    let restBlockCount = 0;
-    // If the file is smaller than one piece then the block hashes
-    // should be padded to the next power of two instead of the next
-    // piece boundary.
-    if (this.blockCount < this.blocksPerPiece) {
-      restBlockCount = nextPowerOfTwo(this.blockCount) - this.blockCount;
-    } else {
-      const residue = this.blockCount % this.blocksPerPiece;
-      if (residue > 0) {
-        restBlockCount = this.blocksPerPiece - residue;
-      }
-    }
-    if (restBlockCount > 0) {
-      for (let i = 0; i < restBlockCount; ++i) {
-        this.merkleLeaves.push(ZEROS_32_BYTES);
-      }
-    }
-    if (this.merkleLeaves.length > 0) {
-      controller.enqueue(this.merkleLeaves);
-    }
-  }
-}
-
-/**
- * Make a block hasher transform stream
- * @param blocksPerPiece
- * @returns block hasher transform stream
- */
-function makeBlockHasher(blocksPerPiece: number) {
-  return new TransformStream(new BlockHasherTransformer(blocksPerPiece));
-}
-
-/**
- * Merkle root calculator transformer class
- */
-class MerkleRootCalculatorTransformer
-  implements Transformer<Uint8Array[], Uint8Array>
-{
-  updateProgress;
-  constructor(updateProgress?: () => void) {
-    this.updateProgress = updateProgress;
-  }
-  async transform(
-    chunk: Uint8Array[],
-    controller: TransformStreamDefaultController<Uint8Array>
-  ) {
-    controller.enqueue(await merkleRoot(chunk));
-    if (this.updateProgress) {
-      this.updateProgress();
-    }
-  }
-}
-
-/**
- * Make a merkle root calculator transform stream
- * @param updateProgress
- * @returns merkle root calculator transform stream
- */
-function makeMerkleRootCalculator(updateProgress?: () => void) {
-  return new TransformStream(
-    new MerkleRootCalculatorTransformer(updateProgress)
   );
+  const paddingFilePath = `.pad/${paddingSize}`;
+  const nestedPath =
+    typeof commonDir === "undefined"
+      ? paddingFilePath
+      : `${commonDir}/${paddingFilePath}`;
+  Object.defineProperties(paddingFile, {
+    webkitRelativePath: {
+      configurable: true,
+      enumerable: true,
+      get: () => nestedPath,
+    },
+    padding: {
+      configurable: true,
+      enumerable: false,
+      get: () => true,
+    },
+  });
+  return paddingFile;
 }
 
-/**
- * Merkle tree balancer transformer class
- */
-class MerkleTreeBalancerTransformer
-  implements Transformer<Uint8Array, Uint8Array[]>
-{
-  leafCount = 0;
-  merkleLeaves: Uint8Array[] = [];
-  blocksPerPiece;
-  constructor(blocksPerPiece: number) {
-    this.blocksPerPiece = blocksPerPiece;
-  }
-  transform(chunk: Uint8Array) {
-    ++this.leafCount;
-    this.merkleLeaves.push(chunk);
-  }
-  async flush(controller: TransformStreamDefaultController<Uint8Array[]>) {
-    const restLeafCount = nextPowerOfTwo(this.leafCount) - this.leafCount;
-    if (restLeafCount > 0) {
-      const padLeaf = await this.padLeafPromise;
-      for (let i = 0; i < restLeafCount; ++i) {
-        this.merkleLeaves.push(padLeaf);
-      }
-    }
-    controller.enqueue(this.merkleLeaves);
-  }
-  get padLeafPromise() {
-    return merkleRoot(Array(this.blocksPerPiece).fill(new Uint8Array(32)));
-  }
-}
-
-/**
- * Make a merkle tree balancer transform stream
- * @param blocksPerPiece
- * @returns merkle tree balancer transform stream
- */
-function makeMerkleTreeBalancer(blocksPerPiece: number) {
-  return new TransformStream(new MerkleTreeBalancerTransformer(blocksPerPiece));
-}
-
-/**
- * Parse an array of files into a file tree
- * and return the sorted file nodes
- * TODO: Refactor, improve types, reduce returned values, better api design
- * @param files an array of files
- * @returns file tree, file node map and common directory
- */
-function parseFileTree(files: File[]): {
-  fileTree: FileTree;
-  sortedFileNodes: FileNodeValue[];
-  fileNodeMap: FileNodeMap;
-  commonDir: string | undefined;
-} {
-  let rootEntries: Entries = [];
-
-  const fileNodeMap: FileNodeMap = new WeakMap();
-
-  for (const file of files) {
-    const pathArray = (file.webkitRelativePath || file.name).split("/");
-    pathArray.reduce(
-      (entries: Entries | FileNodeValue, currentPathSegment, index) => {
-        entries = entries as Entries;
-        let entry: FileEntry | DirEntry | undefined = entries.find(
-          (entry) => entry[0] === currentPathSegment
-        );
-        if (entry) {
-          return entry[1];
-        }
-        const insertIndex = getSortedIndex(
-          entries,
-          currentPathSegment,
-          (a, b) => (a[0] < b ? -1 : 1)
-        );
-        if (index === pathArray.length - 1) {
-          const fileNode = {
-            "": {
-              length: file.size,
-            },
-          };
-          fileNodeMap.set(fileNode, file);
-          entry = [currentPathSegment, fileNode];
-        } else {
-          entry = [currentPathSegment, []];
-        }
-        entries.splice(insertIndex, 0, entry);
-
-        return entry[1];
-      },
-      rootEntries
-    );
-  }
-
-  let commonDir: string | undefined;
-  if (rootEntries.length === 1 && Array.isArray(rootEntries[0][1])) {
-    commonDir = rootEntries[0][0];
-    rootEntries = rootEntries[0][1];
-  }
-
-  const sortedFileNodes: FileNodeValue[] = [];
-
-  const fileTree: FileTree = {
-    ...(getDirOrFileNode(rootEntries) as DirNodeValue),
+function useProgress(
+  initTotal: number,
+  onProgress?: OnProgress
+): [
+  {
+    current: number;
+    total: number;
+  },
+  () => void
+] {
+  // init progress parameters
+  const progressRef = {
+    // progress current (in piece unit)
+    current: 0,
+    // progress total (in piece unit)
+    total: initTotal,
   };
-
-  return {
-    fileTree,
-    sortedFileNodes,
-    fileNodeMap,
-    commonDir,
-  };
-
-  function getDirOrFileNode(entries: Entries | FileNodeValue) {
-    if (Array.isArray(entries)) {
-      const dirNode: DirNodeValue = {};
-      for (const entry of entries) {
-        dirNode[entry[0]] = getDirOrFileNode(entry[1]);
-      }
-      return dirNode;
-    } else {
-      const fileNode = entries;
-      sortedFileNodes.push(fileNode);
-      return fileNode;
+  // update progress
+  const updateProgress = () => {
+    if (onProgress) {
+      void onProgress(progressRef.current++, progressRef.total);
     }
+  };
+  return [progressRef, updateProgress];
+}
+
+/**
+ * Collapse announce list
+ * @param announceList
+ * @returns collapsed announce list
+ */
+function collapseAnnounceList(
+  announceList: string[][] | undefined
+): string[][] | undefined {
+  if (typeof announceList === "undefined") {
+    return undefined;
   }
+  const collapsedAnnounceList: string[][] = [];
+  for (const tier of announceList) {
+    if (tier.length === 0) {
+      continue;
+    }
+    collapsedAnnounceList.push(tier);
+  }
+  if (collapsedAnnounceList.length === 0) {
+    return undefined;
+  }
+  return collapsedAnnounceList;
+}
+
+/**
+ * Calculate piece length from file size
+ * @param fileSize
+ * @returns
+ */
+function calculatePieceLength(fileSize: number, blockLength: number) {
+  return Math.max(blockLength, nextPowerOfTwo(fileSize >>> 10));
 }

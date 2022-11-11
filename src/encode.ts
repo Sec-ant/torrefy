@@ -1,35 +1,6 @@
 import ArrayKeyedMap from "array-keyed-map";
 export { default as ArrayKeyedMap } from "array-keyed-map";
-import { iterableSort } from "./utils.js";
-
-// bencode integer type
-export type BInteger<Strict extends boolean = true> =
-  | number
-  | bigint
-  | (Strict extends true ? never : boolean);
-
-// bencode byte string type
-export type BByteString<Strict extends boolean = true> =
-  | string
-  | (Strict extends true ? never : ArrayBuffer);
-
-// bencode list type
-export type BList<Strict extends boolean = true> = BData<Strict>[];
-
-// bencode dictionary type
-export type BDictionary<Strict extends boolean = true> =
-  | {
-      [key: BByteString<true>]: BData<Strict>;
-    }
-  | (Strict extends true ? never : Map<BByteString<Strict>, BData<Strict>>);
-
-// bencode data type
-export type BData<Strict extends boolean = true> =
-  | BInteger<Strict>
-  | BByteString<Strict>
-  | BList<Strict>
-  | BDictionary<Strict>
-  | (Strict extends true ? never : undefined | null);
+import { iterableSort, BData, BUFF_L, BUFF_E, BUFF_D } from "./utils/index.js";
 
 /**
  * encode hook handler
@@ -42,21 +13,6 @@ export type EncodeHookHandler = (
  * encoder hooks
  */
 type EncoderHooks = ArrayKeyedMap<(string | ArrayBuffer)[], EncodeHookHandler>;
-
-/**
- * bencode token: l (stands for list start)
- */
-export const BUFF_L = new Uint8Array([108]);
-
-/**
- * bencode token: d (stands for dictionary start)
- */
-export const BUFF_D = new Uint8Array([100]);
-
-/**
- * bencode token: e (stands for end)
- */
-export const BUFF_E = new Uint8Array([101]);
 
 /**
  * bencode readablestream underlying source
@@ -119,7 +75,7 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
     // array: list
     else if (Array.isArray(data)) {
       controller.enqueue(BUFF_L);
-      for (let member of data) {
+      for (const member of data) {
         this.encode(member, controller);
       }
       controller.enqueue(BUFF_E);
@@ -215,7 +171,7 @@ function addHandler(
   const newController = new Proxy(controller, {
     get: function (target, prop, receiver) {
       if (prop !== "enqueue") {
-        return Reflect.get(target, prop, receiver);
+        return Reflect.get(target, prop, receiver) as unknown;
       }
       return ((chunk?: Uint8Array | undefined) => {
         target.enqueue(chunk);
