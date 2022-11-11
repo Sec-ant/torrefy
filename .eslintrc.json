@@ -10,5 +10,5 @@
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking"
   ],
-  "ignorePatterns": ["dist/**/*", "node_modules/**/*"]
+  "ignorePatterns": ["dist/**/*", "node_modules/**/*", "webpack.config.js"]
 }
