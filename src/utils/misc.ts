@@ -91,19 +91,26 @@ export async function merkleRoot(leaves: Uint8Array[]): Promise<Uint8Array> {
   if (leaves.length === 0) {
     throw new Error("Empty leaves");
   }
-  const hashee = new Uint8Array(64);
+  const content = new Uint8Array(64);
   while (leaves.length > 1) {
     let hashFlag = false;
     const hashResult: Uint8Array[] = [];
     for (const leaf of leaves) {
       if (!hashFlag) {
-        hashee.set(leaf);
+        content.set(leaf);
         hashFlag = true;
       } else {
-        hashee.set(leaf, 32);
-        hashResult.push(
-          new Uint8Array(await crypto.subtle.digest("SHA-256", hashee))
-        );
+        content.set(leaf, 32);
+        let hash: Uint8Array;
+        try {
+          hash = new Uint8Array(await crypto.subtle.digest("SHA-256", content));
+        } catch {
+          const { default: jsSHA256 } = await import("jssha/sha256");
+          const sha256Obj = new jsSHA256("SHA-256", "UINT8ARRAY");
+          sha256Obj.update(content);
+          hash = sha256Obj.getHash("UINT8ARRAY");
+        }
+        hashResult.push(hash);
         hashFlag = false;
       }
     }
