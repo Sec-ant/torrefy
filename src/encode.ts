@@ -13,10 +13,7 @@ export type EncodeHookHandler = (
 /**
  * encoder hooks
  */
-type EncoderHooks = TrieMap<
-  (string | number | ArrayBuffer)[],
-  EncodeHookHandler
->;
+type EncoderHooks = TrieMap<(string | number)[], EncodeHookHandler>;
 
 /**
  * bencode readablestream underlying source
@@ -27,8 +24,7 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
   data: BData<false>;
   hooks: EncoderHooks | undefined;
   isHooking = false;
-  // TODO: Support array index number in path
-  path: (string | ArrayBuffer)[] = [];
+  path: (string | number)[] = [];
   constructor(data: BData<false>, hooks?: EncoderHooks) {
     this.data = data;
     this.hooks = hooks;
@@ -79,8 +75,24 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
     // array: list
     else if (Array.isArray(data)) {
       controller.enqueue(BUFF_L);
+      let counter = 0;
       for (const member of data) {
-        this.encode(member, controller);
+        // push path
+        this.path.push(counter);
+        // if hooks are registered
+        if (this.hooks) {
+          const hookHandler = this.hooks.get(this.path);
+          if (hookHandler) {
+            const newController = addHandler(controller, hookHandler);
+            this.encode(member, newController);
+            hookHandler({ value: undefined, done: true });
+          } else {
+            this.encode(member, controller);
+          }
+        }
+        // pop path
+        this.path.pop();
+        ++counter;
       }
       controller.enqueue(BUFF_E);
     }
@@ -100,23 +112,28 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
         if (typeof value === "undefined" || data === null) {
           continue;
         }
-        // push path
-        this.path.push(key);
-        // encode key
-        this.encode(key, controller);
-        // if hooks are registered
-        if (this.hooks) {
-          const hookHandler = this.hooks.get(this.path);
-          if (hookHandler) {
-            const newController = addHandler(controller, hookHandler);
-            this.encode(value, newController);
-            hookHandler({ value: undefined, done: true });
-          } else {
-            this.encode(value, controller);
+        if (key instanceof ArrayBuffer) {
+          this.encode(key, controller);
+          this.encode(value, controller);
+        } else {
+          // push path
+          this.path.push(key);
+          // encode key
+          this.encode(key, controller);
+          // if hooks are registered
+          if (this.hooks) {
+            const hookHandler = this.hooks.get(this.path);
+            if (hookHandler) {
+              const newController = addHandler(controller, hookHandler);
+              this.encode(value, newController);
+              hookHandler({ value: undefined, done: true });
+            } else {
+              this.encode(value, controller);
+            }
           }
+          // pop path
+          this.path.pop();
         }
-        // pop path
-        this.path.pop();
       }
       controller.enqueue(BUFF_E);
     }
