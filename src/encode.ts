@@ -1,5 +1,5 @@
-import ArrayKeyedMap from "array-keyed-map";
-export { default as ArrayKeyedMap } from "array-keyed-map";
+import { TrieMap } from "@sec-ant/trie-map";
+export { TrieMap } from "@sec-ant/trie-map";
 import { iterableSort, BData, BUFF_L, BUFF_E, BUFF_D } from "./utils/index.js";
 
 /**
@@ -12,7 +12,10 @@ export type EncodeHookHandler = (
 /**
  * encoder hooks
  */
-type EncoderHooks = ArrayKeyedMap<(string | ArrayBuffer)[], EncodeHookHandler>;
+type EncoderHooks = TrieMap<
+  (string | number | ArrayBuffer)[],
+  EncodeHookHandler
+>;
 
 /**
  * bencode readablestream underlying source

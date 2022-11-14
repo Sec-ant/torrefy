@@ -33,7 +33,7 @@
     "webpack-cli": "^4.10.0"
   },
   "dependencies": {
-    "array-keyed-map": "^2.1.3",
+    "@sec-ant/trie-map": "^1.1.4",
     "jssha": "github:Sec-ant/jsSHA#dd69d437ee912b95007a330f9afec7635f83271e",
     "uuid": "^9.0.0",
     "workbox-streams": "^6.5.4"

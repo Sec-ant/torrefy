@@ -54,7 +54,7 @@ import {
   TorrentType,
   TorrentOptions,
   OnProgress,
-  ArrayKeyedMap,
+  TrieMap,
   useArrayBufferPromiseHook,
   useTextPromiseHook,
 } from "torrefy";
@@ -84,7 +84,7 @@ const handleProgress: OnProgress = (current, total) => {
 const metaInfo = await create([testFile], options, handleProgress);
 
 // use hooks when bencoding
-const hooks = new ArrayKeyedMap();
+const hooks = new TrieMap();
 
 // declare hook result as an array buffer promise
 const [infoPromise, updateInfo] = useArrayBufferPromiseHook();
@@ -120,7 +120,6 @@ const decodedMetaInfo = await decode(torrentStream2);
 - [x] BDecode implementation
 - [ ] Magnet URI scheme (should be trivial)
 - [ ] Convert all `makeXXXTransformStream` functional closure states to [`transformer`](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream#:~:text=Parameters-,transformer,-Optional) class states (should be trivial)
-- [ ] `ArrayKeyedMap` with `ArrayBuffer` keys (use proxy or drop suppport?)
 - [ ] Convert typescript `Enum`s to `Union`s (need investigation)
 - [ ] Other type related issues (need investigation)
 - [ ] Bundleless entry (need investigation)
