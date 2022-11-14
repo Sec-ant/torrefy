@@ -5,8 +5,8 @@ import {
   BYTE_0,
   BYTE_MINUS,
   isDigitByte,
-} from "./utils/index.js";
-import { Token, TokenType, Tokenizer } from "./transformers/index.js";
+} from "./utils/codec.js";
+import { Token, TokenType, Tokenizer } from "./transformers/tokenizer.js";
 
 export async function parse(
   tokenReadableStream: ReadableStream<Token>

@@ -1,6 +1,7 @@
 import { TrieMap } from "@sec-ant/trie-map";
 export { TrieMap } from "@sec-ant/trie-map";
-import { iterableSort, BData, BUFF_L, BUFF_E, BUFF_D } from "./utils/index.js";
+import { BData, BUFF_L, BUFF_E, BUFF_D } from "./utils/codec.js";
+import { iterableSort } from "./utils/misc.js";
 
 /**
  * encode hook handler
