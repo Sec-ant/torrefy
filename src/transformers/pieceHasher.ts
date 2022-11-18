@@ -1,9 +1,11 @@
+import { UpdateProgress } from "../create.js";
+
 /**
  * Piece hasher transformer class
  */
 class PieceHasherTransformer implements Transformer<Uint8Array, Uint8Array> {
   updateProgress;
-  constructor(updateProgress?: () => void) {
+  constructor(updateProgress?: UpdateProgress) {
     this.updateProgress = updateProgress;
   }
   async transform(
@@ -21,13 +23,13 @@ class PieceHasherTransformer implements Transformer<Uint8Array, Uint8Array> {
     }
     controller.enqueue(pieceHash);
     if (this.updateProgress) {
-      this.updateProgress();
+      await this.updateProgress();
     }
   }
 }
 
 export class PieceHasher extends TransformStream<Uint8Array, Uint8Array> {
-  constructor(updateProgress?: () => void) {
+  constructor(updateProgress?: UpdateProgress) {
     const transformer = new PieceHasherTransformer(updateProgress);
     super(transformer);
   }

@@ -1,3 +1,4 @@
+import { UpdateProgress } from "../create.js";
 import { merkleRoot } from "../utils/misc.js";
 /**
  * Merkle root calculator transformer class
@@ -6,7 +7,7 @@ class MerkleRootCalculatorTransformer
   implements Transformer<Uint8Array[], Uint8Array>
 {
   updateProgress;
-  constructor(updateProgress?: () => void) {
+  constructor(updateProgress?: UpdateProgress) {
     this.updateProgress = updateProgress;
   }
   async transform(
@@ -15,7 +16,7 @@ class MerkleRootCalculatorTransformer
   ) {
     controller.enqueue(await merkleRoot(chunk));
     if (this.updateProgress) {
-      this.updateProgress();
+      await this.updateProgress();
     }
   }
 }
@@ -24,7 +25,7 @@ export class MerkleRootCalculator extends TransformStream<
   Uint8Array[],
   Uint8Array
 > {
-  constructor(updateProgress?: () => void) {
+  constructor(updateProgress?: UpdateProgress) {
     const transformer = new MerkleRootCalculatorTransformer(updateProgress);
     super(transformer);
   }

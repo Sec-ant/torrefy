@@ -21,19 +21,19 @@
   "devDependencies": {
     "@types/uuid": "^8.3.4",
     "@types/wicg-file-system-access": "^2020.9.5",
-    "@typescript-eslint/eslint-plugin": "^5.42.1",
-    "@typescript-eslint/parser": "^5.42.1",
+    "@typescript-eslint/eslint-plugin": "^5.43.0",
+    "@typescript-eslint/parser": "^5.43.0",
     "eslint": "^8.27.0",
     "http-server": "^14.1.1",
     "mocha": "^10.1.0",
     "ts-loader": "^9.4.1",
     "tslib": "^2.4.1",
-    "typescript": "^4.8.4",
-    "webpack": "^5.74.0",
-    "webpack-cli": "^4.10.0"
+    "typescript": "^4.9.3",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.0"
   },
   "dependencies": {
-    "@sec-ant/trie-map": "^1.1.4",
+    "@sec-ant/trie-map": "^1.1.5",
     "jssha": "github:Sec-ant/jsSHA#dd69d437ee912b95007a330f9afec7635f83271e",
     "uuid": "^9.0.0",
     "workbox-streams": "^6.5.4"

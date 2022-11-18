@@ -99,7 +99,7 @@ interface TorrentOptionsBase {
    */
   name?: string;
   /**
-   * piece length: a power of 2 number
+   * piece length: a power of 2 number,
    * will automatically calculate when this value is missing
    */
   pieceLength?: number;
@@ -509,7 +509,7 @@ async function createV1(
     iOpts.announce = iOpts.announceList[0]?.[0];
   }
   // progress hook
-  const [progressRef, updateProgress] = useProgress(0, onProgress);
+  const [updateProgress, setProgressTotal] = useProgress(0, onProgress);
   // torrent name and common dir
   const { commonDir, name } = resolveCommonDirAndTorrentName(
     iOpts.name,
@@ -522,7 +522,7 @@ async function createV1(
   if (iOpts.addPaddingFiles) {
     // assign progress total (in piece unit)
     const totalPieces = getTotalPieces(files, iOpts.pieceLength);
-    progressRef.total = totalPieces;
+    await setProgressTotal(totalPieces);
 
     const pieceLayerReadableStreamPromise: Promise<
       ReadableStream<Uint8Array>
@@ -557,7 +557,7 @@ async function createV1(
   else {
     // assign progress total (in piece unit)
     const totalPieces = Math.ceil(totalFileSize / iOpts.pieceLength);
-    progressRef.total = totalPieces;
+    await setProgressTotal(totalPieces);
 
     // concatenate all files into a single stream first
     const {
@@ -673,8 +673,10 @@ async function createV2(
   ) {
     iOpts.announce = iOpts.announceList[0]?.[0];
   }
+  // assign progress total (in piece unit)
+  const totalPieces = getTotalPieces(files, iOpts.pieceLength);
   // progress hook
-  const [, updateProgress] = useProgress(0, onProgress);
+  const [updateProgress] = useProgress(totalPieces, onProgress);
   // torrent name
   const { name } = resolveCommonDirAndTorrentName(iOpts.name, fileTree);
   iOpts.name = name;
@@ -777,7 +779,7 @@ async function createHybrid(
     iOpts.announce = iOpts.announceList[0]?.[0];
   }
   // progress hook
-  const [, updateProgress] = useProgress(
+  const [updateProgress] = useProgress(
     getTotalPieces(files, iOpts.pieceLength) * 2,
     onProgress
   );
@@ -910,7 +912,7 @@ async function populatePieceLayersAndFileNodes(
     blockLength: number;
     pieceLength: number;
     blocksPerPiece: number;
-    updateProgress?: () => void;
+    updateProgress?: UpdateProgress;
   }
 ) {
   // get pieces root and piece layer readable streams
@@ -949,7 +951,7 @@ function getV1PieceLayerReadableStream(
   opts: {
     pieceLength: number;
     padding: boolean;
-    updateProgress?: () => void;
+    updateProgress?: UpdateProgress;
   }
 ): ReadableStream<Uint8Array> {
   const pieceLayerReadableStream = stream
@@ -973,7 +975,7 @@ function getV2PiecesRootAndPieceLayerReadableStreams(
   opts: {
     blockLength: number;
     blocksPerPiece: number;
-    updateProgress?: () => void;
+    updateProgress?: UpdateProgress;
   }
 ) {
   const pieceLayerReadableStream: ReadableStream<Uint8Array> = stream
@@ -1019,16 +1021,18 @@ function createPaddingFile(paddingSize: number, commonDir: string | undefined) {
   return paddingFile;
 }
 
+export type SetProgressTotal = (
+  totalNumberOrFunction:
+    | number
+    | ((total: number, current?: number) => number | Promise<number>)
+) => Promise<void>;
+
+export type UpdateProgress = () => Promise<void>;
+
 function useProgress(
   initTotal: number,
   onProgress?: OnProgress
-): [
-  {
-    current: number;
-    total: number;
-  },
-  () => void
-] {
+): [UpdateProgress, SetProgressTotal] {
   // init progress parameters
   const progressRef = {
     // progress current (in piece unit)
@@ -1037,12 +1041,23 @@ function useProgress(
     total: initTotal,
   };
   // update progress
-  const updateProgress = () => {
+  const updateProgress: UpdateProgress = async () => {
     if (onProgress) {
-      void onProgress(progressRef.current++, progressRef.total);
+      await onProgress(++progressRef.current, progressRef.total);
     }
   };
-  return [progressRef, updateProgress];
+  // set progress total
+  const setProgressTotal: SetProgressTotal = async (totalNumberOrFunction) => {
+    if (typeof totalNumberOrFunction === "number") {
+      progressRef.total = totalNumberOrFunction;
+    } else {
+      progressRef.total = await totalNumberOrFunction(
+        progressRef.total,
+        progressRef.current
+      );
+    }
+  };
+  return [updateProgress, setProgressTotal];
 }
 
 /**

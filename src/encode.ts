@@ -186,7 +186,7 @@ export function encode(data: BData<false>, hooks?: EncoderHooks) {
  * @returns
  */
 function addHandler(
-  controller: ReadableStreamDefaultController<Uint8Array>,
+  controller: ReadableStreamController<Uint8Array>,
   hookHandler: EncodeHookHandler
 ) {
   const newController = new Proxy(controller, {
@@ -194,11 +194,8 @@ function addHandler(
       if (prop !== "enqueue") {
         return Reflect.get(target, prop, receiver) as unknown;
       }
-      return ((chunk?: Uint8Array | undefined) => {
+      return ((chunk: Uint8Array) => {
         target.enqueue(chunk);
-        if (chunk === undefined) {
-          return;
-        }
         hookHandler({
           value: chunk,
           done: false,
@@ -218,7 +215,7 @@ export function useUint8ArrayStreamHook(): [
   EncodeHookHandler
 ] {
   const ref = {
-    controller: null as ReadableStreamDefaultController<Uint8Array> | null,
+    controller: null as ReadableStreamController<Uint8Array> | null,
   };
 
   const hookHandler = ({
