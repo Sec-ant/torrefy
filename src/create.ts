@@ -589,7 +589,7 @@ async function createV1(
       ? { "creation date": (Date.now() / 1000) >> 0 }
       : {}),
     info: {
-      ...(totalFileSize > 1
+      ...(totalFileCount > 1
         ? {
             files: files.map((file) => {
               // get file path segments
@@ -845,7 +845,7 @@ async function createHybrid(
       : {}),
     info: {
       "file tree": fileTree,
-      ...(totalFileSize > 1
+      ...(totalFileCount > 1
         ? {
             files: files.map((file) => {
               // get file path segments
