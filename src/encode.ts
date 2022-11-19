@@ -1,5 +1,4 @@
 import { TrieMap } from "@sec-ant/trie-map";
-export { TrieMap } from "@sec-ant/trie-map";
 import { BData, BUFF_L, BUFF_E, BUFF_D } from "./utils/codec.js";
 import { iterableSort } from "./utils/misc.js";
 
@@ -13,7 +12,9 @@ export type EncodeHookHandler = (
 /**
  * encoder hooks
  */
-type EncoderHooks = TrieMap<(string | number)[], EncodeHookHandler>;
+type EncoderHooks = TrieMap<Iterable<string | number>, EncodeHookHandler>;
+
+const consumedHooks = new WeakMap<EncoderHooks, boolean>();
 
 /**
  * bencode readablestream underlying source
@@ -22,15 +23,26 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
   textEncoder = new TextEncoder();
   textDecoder = new TextDecoder();
   data: BData<false>;
-  hooks: EncoderHooks | undefined;
-  isHooking = false;
   path: (string | number)[] = [];
+  hooks?: EncoderHooks;
+  consumedHookHandler = new WeakMap<EncodeHookHandler, boolean>();
   constructor(data: BData<false>, hooks?: EncoderHooks) {
     this.data = data;
     this.hooks = hooks;
+    if (hooks) {
+      consumedHooks.set(hooks, true);
+    }
   }
   start(controller: ReadableStreamController<Uint8Array>) {
     this.encode(this.data, controller);
+    if (this.hooks) {
+      for (const hookHandler of this.hooks.values()) {
+        // only done once, in case of closing controller twice
+        if (!this.consumedHookHandler.get(hookHandler)) {
+          hookHandler({ value: undefined, done: true });
+        }
+      }
+    }
     controller.close();
   }
   encode(data: BData<false>, controller: ReadableStreamController<Uint8Array>) {
@@ -127,6 +139,7 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
               const newController = addHandler(controller, hookHandler);
               this.encode(value, newController);
               hookHandler({ value: undefined, done: true });
+              this.consumedHookHandler.set(hookHandler, true);
             } else {
               this.encode(value, controller);
             }
@@ -157,6 +170,7 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
             const newController = addHandler(controller, hookHandler);
             this.encode(value, newController);
             hookHandler({ value: undefined, done: true });
+            this.consumedHookHandler.set(hookHandler, true);
           } else {
             this.encode(value, controller);
           }
@@ -191,16 +205,18 @@ function addHandler(
 ) {
   const newController = new Proxy(controller, {
     get: function (target, prop, receiver) {
-      if (prop !== "enqueue") {
-        return Reflect.get(target, prop, receiver) as unknown;
+      switch (prop) {
+        case "enqueue":
+          return ((chunk: Uint8Array) => {
+            target.enqueue(chunk);
+            hookHandler({
+              value: chunk,
+              done: false,
+            });
+          }).bind(target);
+        default:
+          return Reflect.get(target, prop, receiver) as unknown;
       }
-      return ((chunk: Uint8Array) => {
-        target.enqueue(chunk);
-        hookHandler({
-          value: chunk,
-          done: false,
-        });
-      }).bind(target);
     },
   });
   return newController;
@@ -208,12 +224,12 @@ function addHandler(
 
 /**
  * Get a uint8 array stream hook handler
- * @returns a uint8 array readable stream and a hook handler
+ * @returns a uint8 array readable stream
  */
-export function useUint8ArrayStreamHook(): [
-  ReadableStream<Uint8Array>,
-  EncodeHookHandler
-] {
+export function useUint8ArrayStreamHook(
+  path: Iterable<string>,
+  hooks: EncoderHooks
+): [ReadableStream<Uint8Array>] {
   const ref = {
     controller: null as ReadableStreamController<Uint8Array> | null,
   };
@@ -236,30 +252,43 @@ export function useUint8ArrayStreamHook(): [
     start(controller) {
       ref.controller = controller;
     },
+    pull(controller) {
+      if (!consumedHooks.get(hooks)) {
+        // prevent endless awaiting when this readable stream is consumed as promise
+        console.warn("You need to call encode() first and then consume hooks.");
+        controller.close();
+        ref.controller = null;
+      }
+    },
   });
 
-  return [readableStream, hookHandler];
+  hooks.set(path, hookHandler);
+
+  return [readableStream];
 }
 
 /**
  * Get an array buffer promise hook handler
- * @returns an array buffer promise and a hook handler
+ * @returns an array buffer
  */
-export function useArrayBufferPromiseHook(): [
-  Promise<ArrayBuffer>,
-  EncodeHookHandler
-] {
-  const [readableStream, hookHandler] = useUint8ArrayStreamHook();
+export function useArrayBufferPromiseHook(
+  path: Iterable<string>,
+  hooks: EncoderHooks
+): [Promise<ArrayBuffer>] {
+  const [readableStream] = useUint8ArrayStreamHook(path, hooks);
   const arrayBufferPromise = new Response(readableStream).arrayBuffer();
-  return [arrayBufferPromise, hookHandler];
+  return [arrayBufferPromise];
 }
 
 /**
  * Get an text promise hook handler
- * @returns an text promise and a hook handler
+ * @returns an text promise
  */
-export function useTextPromiseHook(): [Promise<string>, EncodeHookHandler] {
-  const [readableStream, hookHandler] = useUint8ArrayStreamHook();
+export function useTextPromiseHook(
+  path: Iterable<string>,
+  hooks: EncoderHooks
+): [Promise<string>] {
+  const [readableStream] = useUint8ArrayStreamHook(path, hooks);
   const textPromise = new Response(readableStream).text();
-  return [textPromise, hookHandler];
+  return [textPromise];
 }
