@@ -719,8 +719,8 @@ async function createV2(
       // only add private field when it is private
       ...(iOpts.isPrivate ? { private: true } : {}),
     },
-    // add piece layers if any
-    ...(pieceLayers.size > 0 && { "piece layers": pieceLayers }),
+    // piece layers must not be abscent
+    "piece layers": pieceLayers,
   };
 
   return metaInfo;
@@ -875,8 +875,8 @@ async function createHybrid(
       // only add private field when it is private
       ...(iOpts.isPrivate ? { private: true } : {}),
     },
-    // add piece layers if any
-    ...(pieceLayers.size > 0 && { "piece layers": pieceLayers }),
+    // piece layers must not be abscent
+    "piece layers": pieceLayers,
   };
 
   return metaInfo;
