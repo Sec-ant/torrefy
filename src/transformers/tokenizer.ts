@@ -16,7 +16,6 @@ export enum TokenType {
   ListEnd = "ListEnd",
   DictionaryStart = "DictionaryStart",
   DictionaryEnd = "DictionaryEnd",
-  NewTokenType = "NewTokenType",
 }
 
 interface IntegerToken {
