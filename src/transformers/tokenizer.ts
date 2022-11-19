@@ -62,7 +62,7 @@ export type Token<T extends TokenType = TokenType> = T extends TokenType.Integer
 class TokenizerTransformer implements Transformer<Uint8Array, Token> {
   endStack: (TokenType.DictionaryEnd | TokenType.ListEnd)[] = [];
   token: Token | null = null;
-  byteStringLength = 0;
+  byteStringLength = -1;
   byteStringOffset = 0;
   transform(
     chunk: Uint8Array,
@@ -74,7 +74,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
     if (
       this.endStack.length ||
       this.token ||
-      this.byteStringLength ||
+      this.byteStringLength !== -1 ||
       this.byteStringOffset
     ) {
       throw new SyntaxError("Unexpected end of torrent stream");
@@ -89,7 +89,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
       return;
     }
     // check token type
-    if (this.token === null && this.byteStringLength === 0) {
+    if (this.token === null && this.byteStringLength === -1) {
       const firstByte = chunk[0] as number;
       // integer
       if (firstByte === BYTE_I) {
@@ -142,7 +142,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
       this.tokenize(chunk.subarray(1), controller);
     }
     // process token
-    else if (this.token && this.byteStringLength === 0) {
+    else if (this.token && this.byteStringLength === -1) {
       // integer
       if (this.token.type === TokenType.Integer) {
         const indexOfE = chunk.indexOf(BYTE_E);
@@ -206,7 +206,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
       }
     }
     // process byte length
-    else if (this.byteStringLength && this.token === null) {
+    else if (this.byteStringLength > -1 && this.token === null) {
       let indexOfColon = -1;
       for (const [index, byte] of chunk.entries()) {
         // byte string length digit
@@ -233,7 +233,7 @@ class TokenizerTransformer implements Transformer<Uint8Array, Token> {
           value: new Uint8Array(this.byteStringLength),
         };
         // reset byte string length
-        this.byteStringLength = 0;
+        this.byteStringLength = -1;
         // tokenize following bytes
         this.tokenize(chunk.subarray(indexOfColon + 1), controller);
       }
