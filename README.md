@@ -93,7 +93,7 @@ You can register encoder hooks when using the `encode` function. A common use ca
 
 To use encoder hooks, you will have to install the peer dependency [`@sec-ant/trie-map`](https://www.npmjs.com/package/@sec-ant/trie-map), which acts as an encoder hook system and allows you to register encoder hooks with iterable paths as keys in. Refer to its [README](https://github.com/Sec-ant/trie-map) to learn more about the package.
 
-This package provides several helper functions to help you register hooks in a hook system and consume their results as you please: `useUint8ArrayStreamHook`, `useArrayBufferPromiseHook`, `useTextPromiseHook`. You can also define your own functions to handle hooks.
+This package provides several helper functions to help you register hooks in a hook system and consume their results as you please: `useUint8ArrayStreamHook`, `useArrayBufferPromiseHook`, `useTextPromiseHook`. You can also define your own functions to register and use hooks.
 
 Here is probably how you should use this feature:
 
