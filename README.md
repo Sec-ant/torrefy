@@ -47,8 +47,81 @@ const decodedMetaInfo = await decode(torrentStream2);
 
 ## Features
 
-### Supports Different Web File APIs
+### Supports Creating V1, V2 or Hybrid Torrents
+
+This package supports creating [V1](http://bittorrent.org/beps/bep_0003.html), [V2](https://www.bittorrent.org/beps/bep_0052.html) ([introduction blog](https://blog.libtorrent.org/2020/09/bittorrent-v2/)) or [Hybrid](https://www.bittorrent.org/beps/bep_0052.html#upgrade-path) ([introduction blog](https://blog.libtorrent.org/2020/09/bittorrent-v2/#:~:text=for%20backwards%20compatibility.-,backwards%20compatibility,-All%20new%20features)) torrents.
+
+### Covers Various Web File APIs
 
 This package can handle input files or directories acquired from [File API](https://developer.mozilla.org/docs/Web/API/File), [File and Directory Entries API](https://developer.mozilla.org/docs/Web/API/File_and_Directory_Entries_API) or [File System Access API](https://developer.mozilla.org/docs/Web/API/File_System_Access_API).
 
-### TBD
+### Supports Comprehensive Options
+
+TBD
+
+### Supports Handling Progress
+
+TBD
+
+### Exposes Stream-Based APIs
+
+The `create` function consumes an [iterable](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Iteration_protocols#the_iterable_protocol) of input files as [`ReadableStream`](https://developer.mozilla.org/docs/Web/API/ReadableStream)s with options and populates a `MetaInfo` object. This function internally uses several [`TransformStream`](https://developer.mozilla.org/docs/Web/API/TransformStream)s to chop the files into pieces and hash them.
+
+The `encode` function consumes any bcodec friendly entity (e.g. `MetaInfo` object) and [bencode](http://bittorrent.org/beps/bep_0003.html#bencoding)s it into a `ReadableStream`.
+
+The `decode` function consumes any bcodec friendly `ReadableStream` (e.g. torrent `ReadableStream`) and bdecodes it into the corresponding entity. This function internally uses a `TransformStream` called `Tokenizer` to tokenize the input `ReadableStream` and then calls `parse` function to parse the `Tokens`.
+
+All `TransformStream`s used in this package are also exported.
+
+### Supports a Comprehensive Set of Bcodec Friendly Javascript Types
+
+Bcodec friendly Javascript types includes (for the time being):
+
+| Bcodec Type \ Javascript Type |                                                           `Strict`                                                            |                                                                 `Loose` (`& Strict`)                                                                  |
+| :---------------------------: | :---------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------: |
+|         `ByteString`          |                                [`string`](https://developer.mozilla.org/docs/Glossary/String)                                 |                        [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)                        |
+|           `Integer`           | [`number`](https://developer.mozilla.org/docs/Glossary/Number) [`bigint`](https://developer.mozilla.org/docs/Glossary/BigInt) |                                           [`boolean`](https://developer.mozilla.org/docs/Glossary/Boolean)                                            |
+|            `List`             |                [`Strict[]`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)                 |                                                                       `Loose[]`                                                                       |
+|         `Dictionary`          |        [`{[key: string]: Strict}`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)         | ` {[key: string]: Loose}` <br/> [`Map<string \| ArrayBuffer, Loose>`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map) |
+|            ignored            |                                                               -                                                               |                                                                  `undefined` `null`                                                                   |
+
+`encode` function supports all `Loose` type inputs and `decode` function always returns `Strict` type results.
+
+### Supports Hooks in Bencoding
+
+> ⚠ The terminology may change in the future.
+
+You can register hooks when using the `encode` function. A common use case is extracting the bencoded `info` dictionary and calculating the [`infohash`](http://bittorrent.org/beps/bep_0052.html#infohash). (This package doesn't provide an out-of-box function to calculate `infohash` for now)
+
+To use hooks, you will have to install the peer dependency [`@sec-ant/trie-map`](https://www.npmjs.com/package/@sec-ant/trie-map), which allows you to register hook handlers with iterable paths as keys. You can learn more about this package in its [README](https://github.com/Sec-ant/trie-map).
+
+This package provides 3 helper functions to help you register hook handlers on hooks and consume their results as you please: `useUint8ArrayStreamHook`, `useArrayBufferPromiseHook`, `useTextPromiseHook`.
+
+Here is how you should use this feature:
+
+```ts
+import { encode, EncoderHooks, useArrayBufferPromiseHook } from "torrefy";
+import { TrieMap } from "@sec-ant/trie-map";
+
+// create a dummy object to encode
+const dummyObject = {
+  a: "b",
+  c: 1,
+  info: {
+    foo: "bar",
+  },
+  s: ["t"],
+};
+
+// initialize hooks for registration of hook handlers
+const hooks: EncoderHooks = new TrieMap();
+
+// register an array buffer promise hook under `dummyObject.info`
+const [infoArrayBufferPromise] = useArrayBufferPromiseHook(["info"], hooks);
+
+// provide the hooks as an input argument into the encode function
+const bencodedReadableStream = encode(dummyObject, hooks);
+
+// await the hook result
+const infoArrayBuffer = await infoArrayBufferPromise; // => ArrayBuffer(12)
+```
