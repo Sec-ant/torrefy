@@ -27,4 +27,4 @@ of the composed path at that point
 
 #### Defined in
 
-[src/utils/fileTree.ts:120](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L120)
+[src/utils/fileTree.ts:120](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L120)

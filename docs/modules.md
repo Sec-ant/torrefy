@@ -120,7 +120,7 @@
 
 #### Defined in
 
-[src/utils/codec.ts:11](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L11)
+[src/utils/codec.ts:11](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L11)
 
 ___
 
@@ -136,7 +136,7 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:53](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L53)
+[src/utils/codec.ts:53](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L53)
 
 ___
 
@@ -152,7 +152,7 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:36](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L36)
+[src/utils/codec.ts:36](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L36)
 
 ___
 
@@ -168,7 +168,7 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:4](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L4)
+[src/utils/codec.ts:4](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L4)
 
 ___
 
@@ -184,7 +184,7 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:18](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L18)
+[src/utils/codec.ts:18](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L18)
 
 ___
 
@@ -194,7 +194,7 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:32](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L32)
+[src/utils/codec.ts:32](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L32)
 
 ___
 
@@ -210,7 +210,7 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:29](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L29)
+[src/utils/codec.ts:29](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L29)
 
 ___
 
@@ -236,7 +236,7 @@ encode hook handler
 
 #### Defined in
 
-[src/encode.ts:8](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/encode.ts#L8)
+[src/encode.ts:8](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L8)
 
 ___
 
@@ -248,7 +248,7 @@ encoder hooks
 
 #### Defined in
 
-[src/encode.ts:15](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/encode.ts#L15)
+[src/encode.ts:15](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L15)
 
 ___
 
@@ -260,7 +260,7 @@ file attributes
 
 #### Defined in
 
-[src/utils/fileTree.ts:48](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L48)
+[src/utils/fileTree.ts:48](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L48)
 
 ___
 
@@ -270,7 +270,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:1](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileDirLike.ts#L1)
+[src/utils/fileDirLike.ts:1](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L1)
 
 ___
 
@@ -280,7 +280,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:3](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileDirLike.ts#L3)
+[src/utils/fileDirLike.ts:3](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L3)
 
 ___
 
@@ -292,7 +292,7 @@ v2 dir entry
 
 #### Defined in
 
-[src/utils/fileTree.ts:136](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L136)
+[src/utils/fileTree.ts:136](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L136)
 
 ___
 
@@ -304,7 +304,7 @@ v2 file tree dir node
 
 #### Defined in
 
-[src/utils/fileTree.ts:131](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L131)
+[src/utils/fileTree.ts:131](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L131)
 
 ___
 
@@ -316,7 +316,7 @@ v2 file or dir entries
 
 #### Defined in
 
-[src/utils/fileTree.ts:146](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L146)
+[src/utils/fileTree.ts:146](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L146)
 
 ___
 
@@ -328,7 +328,7 @@ v2 file entry
 
 #### Defined in
 
-[src/utils/fileTree.ts:126](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L126)
+[src/utils/fileTree.ts:126](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L126)
 
 ___
 
@@ -340,7 +340,7 @@ v1 file list
 
 #### Defined in
 
-[src/utils/fileTree.ts:108](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L108)
+[src/utils/fileTree.ts:108](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L108)
 
 ___
 
@@ -358,7 +358,7 @@ info
 
 #### Defined in
 
-[src/create.ts:295](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L295)
+[src/create.ts:295](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L295)
 
 ___
 
@@ -376,7 +376,7 @@ meta info
 
 #### Defined in
 
-[src/create.ts:376](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L376)
+[src/create.ts:376](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L376)
 
 ___
 
@@ -401,7 +401,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:455](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L455)
+[src/create.ts:455](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L455)
 
 ___
 
@@ -413,7 +413,7 @@ v2 packed dir entry
 
 #### Defined in
 
-[src/utils/fileTree.ts:141](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L141)
+[src/utils/fileTree.ts:141](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L141)
 
 ___
 
@@ -425,7 +425,7 @@ v2 packed file or dir entries
 
 #### Defined in
 
-[src/utils/fileTree.ts:151](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L151)
+[src/utils/fileTree.ts:151](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L151)
 
 ___
 
@@ -437,7 +437,7 @@ v2 piece layers
 
 #### Defined in
 
-[src/create.ts:308](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L308)
+[src/create.ts:308](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L308)
 
 ___
 
@@ -447,7 +447,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileTree.ts:184](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L184)
+[src/utils/fileTree.ts:184](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L184)
 
 ___
 
@@ -471,7 +471,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:1024](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L1024)
+[src/create.ts:1024](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L1024)
 
 ___
 
@@ -487,7 +487,7 @@ ___
 
 #### Defined in
 
-[src/transformers/tokenizer.ts:47](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/transformers/tokenizer.ts#L47)
+[src/transformers/tokenizer.ts:47](https://github.com/Sec-ant/bepjs/blob/9590005/src/transformers/tokenizer.ts#L47)
 
 ___
 
@@ -505,7 +505,7 @@ torrent options
 
 #### Defined in
 
-[src/create.ts:161](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L161)
+[src/create.ts:161](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L161)
 
 ___
 
@@ -529,7 +529,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileTree.ts:199](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L199)
+[src/utils/fileTree.ts:199](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L199)
 
 ___
 
@@ -547,7 +547,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:1030](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L1030)
+[src/create.ts:1030](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L1030)
 
 ## Variables
 
@@ -559,7 +559,7 @@ bencode buff: 0 (stands for 0)
 
 #### Defined in
 
-[src/utils/codec.ts:125](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L125)
+[src/utils/codec.ts:125](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L125)
 
 ___
 
@@ -571,7 +571,7 @@ bencode buff: : (stands for byte string length end)
 
 #### Defined in
 
-[src/utils/codec.ts:105](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L105)
+[src/utils/codec.ts:105](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L105)
 
 ___
 
@@ -583,7 +583,7 @@ bencode buff: d (stands for dictionary start)
 
 #### Defined in
 
-[src/utils/codec.ts:75](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L75)
+[src/utils/codec.ts:75](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L75)
 
 ___
 
@@ -595,7 +595,7 @@ bencode buff: e (stands for end)
 
 #### Defined in
 
-[src/utils/codec.ts:85](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L85)
+[src/utils/codec.ts:85](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L85)
 
 ___
 
@@ -607,7 +607,7 @@ bencode buff: i (stands for integer start)
 
 #### Defined in
 
-[src/utils/codec.ts:95](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L95)
+[src/utils/codec.ts:95](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L95)
 
 ___
 
@@ -619,7 +619,7 @@ bencode buff: l (stands for list start)
 
 #### Defined in
 
-[src/utils/codec.ts:65](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L65)
+[src/utils/codec.ts:65](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L65)
 
 ___
 
@@ -631,7 +631,7 @@ bencode buff: - (stands for -)
 
 #### Defined in
 
-[src/utils/codec.ts:115](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L115)
+[src/utils/codec.ts:115](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L115)
 
 ___
 
@@ -643,7 +643,7 @@ bencode byte: 0 (stands for 0)
 
 #### Defined in
 
-[src/utils/codec.ts:120](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L120)
+[src/utils/codec.ts:120](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L120)
 
 ___
 
@@ -655,7 +655,7 @@ bencode byte: : (stands for byte string length end)
 
 #### Defined in
 
-[src/utils/codec.ts:100](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L100)
+[src/utils/codec.ts:100](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L100)
 
 ___
 
@@ -667,7 +667,7 @@ bencode byte: d (stands for dictionary start)
 
 #### Defined in
 
-[src/utils/codec.ts:70](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L70)
+[src/utils/codec.ts:70](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L70)
 
 ___
 
@@ -679,7 +679,7 @@ bencode byte: e (stands for end)
 
 #### Defined in
 
-[src/utils/codec.ts:80](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L80)
+[src/utils/codec.ts:80](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L80)
 
 ___
 
@@ -691,7 +691,7 @@ bencode byte: i (stands for integer start)
 
 #### Defined in
 
-[src/utils/codec.ts:90](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L90)
+[src/utils/codec.ts:90](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L90)
 
 ___
 
@@ -703,7 +703,7 @@ bencode byte: l (stands for list start)
 
 #### Defined in
 
-[src/utils/codec.ts:60](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L60)
+[src/utils/codec.ts:60](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L60)
 
 ___
 
@@ -715,7 +715,7 @@ bencode byte: - (stands for -)
 
 #### Defined in
 
-[src/utils/codec.ts:110](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L110)
+[src/utils/codec.ts:110](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L110)
 
 ___
 
@@ -727,7 +727,7 @@ default block length 1 << 14 = 16384
 
 #### Defined in
 
-[src/create.ts:388](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L388)
+[src/create.ts:388](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L388)
 
 ## Functions
 
@@ -748,7 +748,7 @@ default block length 1 << 14 = 16384
 
 #### Defined in
 
-[src/utils/fileTree.ts:506](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L506)
+[src/utils/fileTree.ts:506](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L506)
 
 ___
 
@@ -770,7 +770,7 @@ concat uint8 arrays
 
 #### Defined in
 
-[src/utils/misc.ts:61](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/misc.ts#L61)
+[src/utils/misc.ts:61](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/misc.ts#L61)
 
 ___
 
@@ -792,7 +792,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:885](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L885)
+[src/create.ts:885](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L885)
 
 ___
 
@@ -812,7 +812,7 @@ ___
 
 #### Defined in
 
-[src/decode.ts:130](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/decode.ts#L130)
+[src/decode.ts:130](https://github.com/Sec-ant/bepjs/blob/9590005/src/decode.ts#L130)
 
 ___
 
@@ -837,7 +837,7 @@ readable stream of the bencoded data
 
 #### Defined in
 
-[src/encode.ts:195](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/encode.ts#L195)
+[src/encode.ts:195](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L195)
 
 ___
 
@@ -857,7 +857,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:69](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileDirLike.ts#L69)
+[src/utils/fileDirLike.ts:69](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L69)
 
 ___
 
@@ -877,7 +877,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:82](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileDirLike.ts#L82)
+[src/utils/fileDirLike.ts:82](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L82)
 
 ___
 
@@ -916,7 +916,7 @@ index of the value in the sorted array and indexed result if found
 
 #### Defined in
 
-[src/utils/misc.ts:9](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/misc.ts#L9)
+[src/utils/misc.ts:9](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/misc.ts#L9)
 
 ___
 
@@ -938,7 +938,7 @@ is byte digit
 
 #### Defined in
 
-[src/utils/codec.ts:132](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/codec.ts#L132)
+[src/utils/codec.ts:132](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L132)
 
 ___
 
@@ -958,7 +958,7 @@ fileDirLike is File
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:5](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileDirLike.ts#L5)
+[src/utils/fileDirLike.ts:5](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L5)
 
 ___
 
@@ -978,7 +978,7 @@ fileDirLike is FileSystemDirectoryEntry
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:9](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileDirLike.ts#L9)
+[src/utils/fileDirLike.ts:9](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L9)
 
 ___
 
@@ -998,7 +998,7 @@ fileDirLike is FileSystemDirectoryHandle
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:29](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileDirLike.ts#L29)
+[src/utils/fileDirLike.ts:29](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L29)
 
 ___
 
@@ -1018,7 +1018,7 @@ fileDirLike is FileSystemFileEntry
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:19](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileDirLike.ts#L19)
+[src/utils/fileDirLike.ts:19](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L19)
 
 ___
 
@@ -1038,7 +1038,7 @@ fileDirLike is FileSystemFileHandle
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:45](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileDirLike.ts#L45)
+[src/utils/fileDirLike.ts:45](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L45)
 
 ___
 
@@ -1058,7 +1058,7 @@ entry is FileTreeDirEntry
 
 #### Defined in
 
-[src/utils/fileTree.ts:499](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L499)
+[src/utils/fileTree.ts:499](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L499)
 
 ___
 
@@ -1078,7 +1078,7 @@ node is FileTreeDirNode
 
 #### Defined in
 
-[src/utils/fileTree.ts:487](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L487)
+[src/utils/fileTree.ts:487](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L487)
 
 ___
 
@@ -1098,7 +1098,7 @@ entry is FileTreeFileEntry
 
 #### Defined in
 
-[src/utils/fileTree.ts:493](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L493)
+[src/utils/fileTree.ts:493](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L493)
 
 ___
 
@@ -1118,7 +1118,7 @@ node is FileTreeFileNode
 
 #### Defined in
 
-[src/utils/fileTree.ts:481](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L481)
+[src/utils/fileTree.ts:481](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L481)
 
 ___
 
@@ -1149,7 +1149,7 @@ sorted array
 
 #### Defined in
 
-[src/utils/misc.ts:44](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/misc.ts#L44)
+[src/utils/misc.ts:44](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/misc.ts#L44)
 
 ___
 
@@ -1174,7 +1174,7 @@ root hash
 
 #### Defined in
 
-[src/utils/misc.ts:90](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/misc.ts#L90)
+[src/utils/misc.ts:90](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/misc.ts#L90)
 
 ___
 
@@ -1198,7 +1198,7 @@ next nearest power of 2
 
 #### Defined in
 
-[src/utils/misc.ts:80](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/misc.ts#L80)
+[src/utils/misc.ts:80](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/misc.ts#L80)
 
 ___
 
@@ -1219,7 +1219,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileTree.ts:456](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L456)
+[src/utils/fileTree.ts:456](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L456)
 
 ___
 
@@ -1239,7 +1239,7 @@ ___
 
 #### Defined in
 
-[src/decode.ts:11](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/decode.ts#L11)
+[src/decode.ts:11](https://github.com/Sec-ant/bepjs/blob/9590005/src/decode.ts#L11)
 
 ___
 
@@ -1264,7 +1264,7 @@ file tree and a traverse function
 
 #### Defined in
 
-[src/utils/fileTree.ts:209](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L209)
+[src/utils/fileTree.ts:209](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L209)
 
 ___
 
@@ -1290,7 +1290,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileTree.ts:156](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L156)
+[src/utils/fileTree.ts:156](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L156)
 
 ___
 
@@ -1315,7 +1315,7 @@ an array buffer
 
 #### Defined in
 
-[src/encode.ts:277](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/encode.ts#L277)
+[src/encode.ts:277](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L277)
 
 ___
 
@@ -1340,7 +1340,7 @@ an text promise
 
 #### Defined in
 
-[src/encode.ts:290](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/encode.ts#L290)
+[src/encode.ts:290](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L290)
 
 ___
 
@@ -1365,4 +1365,4 @@ a uint8 array readable stream
 
 #### Defined in
 
-[src/encode.ts:232](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/encode.ts#L232)
+[src/encode.ts:232](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L232)

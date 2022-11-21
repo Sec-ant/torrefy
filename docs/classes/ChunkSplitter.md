@@ -39,7 +39,7 @@ TransformStream&lt;Uint8Array, Uint8Array\&gt;.constructor
 
 #### Defined in
 
-[src/transformers/chunkSplitter.ts:45](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/transformers/chunkSplitter.ts#L45)
+[src/transformers/chunkSplitter.ts:45](https://github.com/Sec-ant/bepjs/blob/9590005/src/transformers/chunkSplitter.ts#L45)
 
 ## Properties
 

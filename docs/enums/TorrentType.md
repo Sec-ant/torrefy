@@ -24,7 +24,7 @@ v1 + v2 hybrid torrent
 
 #### Defined in
 
-[src/create.ts:61](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L61)
+[src/create.ts:61](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L61)
 
 ___
 
@@ -38,7 +38,7 @@ v1 torrent
 
 #### Defined in
 
-[src/create.ts:49](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L49)
+[src/create.ts:49](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L49)
 
 ___
 
@@ -52,4 +52,4 @@ v2 torrent
 
 #### Defined in
 
-[src/create.ts:55](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/create.ts#L55)
+[src/create.ts:55](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L55)

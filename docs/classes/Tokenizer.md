@@ -31,7 +31,7 @@ TransformStream&lt;Uint8Array, Token\&gt;.constructor
 
 #### Defined in
 
-[src/transformers/tokenizer.ts:248](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/transformers/tokenizer.ts#L248)
+[src/transformers/tokenizer.ts:248](https://github.com/Sec-ant/bepjs/blob/9590005/src/transformers/tokenizer.ts#L248)
 
 ## Properties
 

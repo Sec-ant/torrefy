@@ -40,7 +40,7 @@ TransformStream&lt;
 
 #### Defined in
 
-[src/transformers/merkleRootCalculator.ts:28](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/transformers/merkleRootCalculator.ts#L28)
+[src/transformers/merkleRootCalculator.ts:28](https://github.com/Sec-ant/bepjs/blob/9590005/src/transformers/merkleRootCalculator.ts#L28)
 
 ## Properties
 
