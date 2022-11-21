@@ -49,7 +49,7 @@ const decodedMetaInfo = await decode(torrentStream2);
 
 ### Supports Creating V1, V2 or Hybrid Torrents
 
-This package supports creating [V1](http://bittorrent.org/beps/bep_0003.html), [V2](https://www.bittorrent.org/beps/bep_0052.html) ([introduction blog](https://blog.libtorrent.org/2020/09/bittorrent-v2/)) or [Hybrid](https://www.bittorrent.org/beps/bep_0052.html#upgrade-path) ([introduction blog](https://blog.libtorrent.org/2020/09/bittorrent-v2/#:~:text=for%20backwards%20compatibility.-,backwards%20compatibility,-All%20new%20features)) torrents.
+This package supports creating [v1](http://bittorrent.org/beps/bep_0003.html), [v2](https://www.bittorrent.org/beps/bep_0052.html) ([introduction blog](https://blog.libtorrent.org/2020/09/bittorrent-v2/)) or [hybrid](https://www.bittorrent.org/beps/bep_0052.html#upgrade-path) ([introduction blog](https://blog.libtorrent.org/2020/09/bittorrent-v2/#:~:text=for%20backwards%20compatibility.-,backwards%20compatibility,-All%20new%20features)) torrents.
 
 ### Covers Various Web File APIs
 
@@ -77,10 +77,10 @@ All `TransformStream`s used in this package are also exported.
 
 Bcodec friendly Javascript types includes (for the time being):
 
-| Bcodec Type \ Javascript Type |                                                           `Strict`                                                            |                                                                 `Loose` (`& Strict`)                                                                  |
+| Bcodec Type \ Javascript Type |                                                           `Strict`                                                            |                                                                        `Loose`                                                                        |
 | :---------------------------: | :---------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------: |
-|         `ByteString`          |                                [`string`](https://developer.mozilla.org/docs/Glossary/String)                                 |                        [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)                        |
-|           `Integer`           | [`number`](https://developer.mozilla.org/docs/Glossary/Number) [`bigint`](https://developer.mozilla.org/docs/Glossary/BigInt) |                                           [`boolean`](https://developer.mozilla.org/docs/Glossary/Boolean)                                            |
+|         `ByteString`          |                                [`string`](https://developer.mozilla.org/docs/Glossary/String)                                 |                   `string` [`ArrayBuffer`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)                    |
+|           `Integer`           | [`number`](https://developer.mozilla.org/docs/Glossary/Number) [`bigint`](https://developer.mozilla.org/docs/Glossary/BigInt) |                                  `number` `bigint` [`boolean`](https://developer.mozilla.org/docs/Glossary/Boolean)                                   |
 |            `List`             |                [`Strict[]`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Array)                 |                                                                       `Loose[]`                                                                       |
 |         `Dictionary`          |        [`{[key: string]: Strict}`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object)         | ` {[key: string]: Loose}` <br/> [`Map<string \| ArrayBuffer, Loose>`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map) |
 |            ignored            |                                                               -                                                               |                                                                  `undefined` `null`                                                                   |
@@ -89,18 +89,16 @@ Bcodec friendly Javascript types includes (for the time being):
 
 ### Supports Hooks in Bencoding
 
-> ⚠ The terminology may change in the future.
+You can register encoder hooks when using the `encode` function. A common use case is extracting the bencoded `info` dictionary and calculating the [`infohash`](http://bittorrent.org/beps/bep_0052.html#infohash). (This package doesn't provide an out-of-box function to calculate `infohash` for now)
 
-You can register hooks when using the `encode` function. A common use case is extracting the bencoded `info` dictionary and calculating the [`infohash`](http://bittorrent.org/beps/bep_0052.html#infohash). (This package doesn't provide an out-of-box function to calculate `infohash` for now)
+To use encoder hooks, you will have to install the peer dependency [`@sec-ant/trie-map`](https://www.npmjs.com/package/@sec-ant/trie-map), which acts as an encoder hook system and allows you to register encoder hooks with iterable paths as keys in. Refer to its [README](https://github.com/Sec-ant/trie-map) to learn more about the package.
 
-To use hooks, you will have to install the peer dependency [`@sec-ant/trie-map`](https://www.npmjs.com/package/@sec-ant/trie-map), which allows you to register hook handlers with iterable paths as keys. You can learn more about this package in its [README](https://github.com/Sec-ant/trie-map).
+This package provides several helper functions to help you register hooks in a hook system and consume their results as you please: `useUint8ArrayStreamHook`, `useArrayBufferPromiseHook`, `useTextPromiseHook`. You can also define your own functions to handle hooks.
 
-This package provides 3 helper functions to help you register hook handlers on hooks and consume their results as you please: `useUint8ArrayStreamHook`, `useArrayBufferPromiseHook`, `useTextPromiseHook`.
-
-Here is how you should use this feature:
+Here is probably how you should use this feature:
 
 ```ts
-import { encode, EncoderHooks, useArrayBufferPromiseHook } from "torrefy";
+import { encode, EncoderHookSystem, useArrayBufferPromiseHook } from "torrefy";
 import { TrieMap } from "@sec-ant/trie-map";
 
 // create a dummy object to encode
@@ -113,15 +111,16 @@ const dummyObject = {
   s: ["t"],
 };
 
-// initialize hooks for registration of hook handlers
-const hooks: EncoderHooks = new TrieMap();
+// initialize an encoder hook system
+const hookSystem: EncoderHookSystem = new TrieMap();
 
-// register an array buffer promise hook under `dummyObject.info`
-const [infoArrayBufferPromise] = useArrayBufferPromiseHook(["info"], hooks);
+// register an encoder hook under dummyObject.info path in the hook system
+// and consume the result as an array buffer promise
+const infoArrayBufferPromise = useArrayBufferPromiseHook(["info"], hookSystem);
 
-// provide the hooks as an input argument into the encode function
-const bencodedReadableStream = encode(dummyObject, hooks);
+// pass the hook system as an input argument to the encode function
+const bencodedReadableStream = encode(dummyObject, hookSystem);
 
-// await the hook result
+// consume the result of the hook
 const infoArrayBuffer = await infoArrayBufferPromise; // => ArrayBuffer(12)
 ```
