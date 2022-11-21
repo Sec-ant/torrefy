@@ -1,6 +1,7 @@
 {
   "name": "torrefy",
   "version": "2.0.5",
+  "description": "An ESM package that uses Web Streams API to create v1, v2 or hybrid torrents in your web browser.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -13,6 +14,26 @@
     "browser": "./dist/index.umd.js",
     "default": "./dist/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sec-ant/torrefy.git"
+  },
+  "homepage": "https://github.com/Sec-ant/torrefy",
+  "bugs": {
+    "url": "https://github.com/Sec-ant/torrefy/issues"
+  },
+  "keywords": [
+    "torrent",
+    "bittorrent",
+    "bencode",
+    "bdecode",
+    "metainfo",
+    "infohash",
+    "webtorrent",
+    "esm",
+    "webstream"
+  ],
+  "author": "Ze-Zheng Wu",
   "license": "MIT",
   "scripts": {
     "clean": "rm -fr ./dist/*.*s",
