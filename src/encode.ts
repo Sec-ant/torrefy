@@ -5,14 +5,17 @@ import { iterableSort } from "./utils/misc.js";
 /**
  * encode hook handler
  */
-export type EncodeHookHandler = (
+export type EncoderHookHandler = (
   result: IteratorResult<Uint8Array, undefined>
 ) => void;
 
 /**
  * encoder hooks
  */
-type EncoderHooks = TrieMap<Iterable<string | number>, EncodeHookHandler>;
+export type EncoderHooks = TrieMap<
+  Iterable<string | number>,
+  EncoderHookHandler
+>;
 
 const consumedHooks = new WeakMap<EncoderHooks, boolean>();
 
@@ -25,7 +28,7 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
   data: BData<false>;
   path: (string | number)[] = [];
   hooks?: EncoderHooks;
-  consumedHookHandler = new WeakMap<EncodeHookHandler, boolean>();
+  consumedHookHandler = new WeakMap<EncoderHookHandler, boolean>();
   constructor(data: BData<false>, hooks?: EncoderHooks) {
     this.data = data;
     this.hooks = hooks;
@@ -201,7 +204,7 @@ export function encode(data: BData<false>, hooks?: EncoderHooks) {
  */
 function addHandler(
   controller: ReadableStreamController<Uint8Array>,
-  hookHandler: EncodeHookHandler
+  hookHandler: EncoderHookHandler
 ) {
   const newController = new Proxy(controller, {
     get: function (target, prop, receiver) {
