@@ -40,7 +40,7 @@ FilePropsBase.attr
 
 #### Defined in
 
-[src/utils/fileTree.ts:75](https://github.com/Sec-ant/bepjs/blob/5d0ef68/src/utils/fileTree.ts#L75)
+[src/utils/fileTree.ts:75](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L75)
 
 ___
 
@@ -60,7 +60,7 @@ FilePropsBase.length
 
 #### Defined in
 
-[src/utils/fileTree.ts:63](https://github.com/Sec-ant/bepjs/blob/5d0ef68/src/utils/fileTree.ts#L63)
+[src/utils/fileTree.ts:63](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L63)
 
 ___
 
@@ -76,4 +76,4 @@ constructed from 16KiB blocks of the file
 
 #### Defined in
 
-[src/utils/fileTree.ts:102](https://github.com/Sec-ant/bepjs/blob/5d0ef68/src/utils/fileTree.ts#L102)
+[src/utils/fileTree.ts:102](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/utils/fileTree.ts#L102)

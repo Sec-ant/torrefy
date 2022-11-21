@@ -37,7 +37,7 @@ TransformStream&lt;Uint8Array, Uint8Array\&gt;.constructor
 
 #### Defined in
 
-[src/transformers/pieceHasher.ts:32](https://github.com/Sec-ant/bepjs/blob/5d0ef68/src/transformers/pieceHasher.ts#L32)
+[src/transformers/pieceHasher.ts:32](https://github.com/Sec-ant/bepjs/blob/9d6a68a/src/transformers/pieceHasher.ts#L32)
 
 ## Properties
 
