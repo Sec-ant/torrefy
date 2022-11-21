@@ -3,46 +3,54 @@ import { BData, BUFF_L, BUFF_E, BUFF_D } from "./utils/codec.js";
 import { iterableSort } from "./utils/misc.js";
 
 /**
- * encode hook handler
+ * encoder hook
  */
-export type EncoderHookHandler = (
+export type EncoderHook = (
   result: IteratorResult<Uint8Array, undefined>
 ) => void;
 
 /**
- * encoder hooks
+ * encoder hook path
  */
-export type EncoderHooks = TrieMap<
-  Iterable<string | number>,
-  EncoderHookHandler
->;
-
-const consumedHooks = new WeakMap<EncoderHooks, boolean>();
+export type EncoderHookPath = Iterable<string | number>;
 
 /**
- * bencode readablestream underlying source
+ * encoder hook system
+ */
+export type EncoderHookSystem = TrieMap<EncoderHookPath, EncoderHook>;
+
+/**
+ * a global weakmap that keeps all consumed hook systems, for internal use
+ */
+const consumedHookSystems = new WeakMap<EncoderHookSystem, boolean>();
+
+/**
+ * bencode readable stream underlying source
  */
 class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
   textEncoder = new TextEncoder();
   textDecoder = new TextDecoder();
   data: BData<false>;
-  path: (string | number)[] = [];
-  hooks?: EncoderHooks;
-  consumedHookHandler = new WeakMap<EncoderHookHandler, boolean>();
-  constructor(data: BData<false>, hooks?: EncoderHooks) {
+  path: (EncoderHookPath extends Iterable<infer PathElement>
+    ? PathElement
+    : never)[] = [];
+  hookSystem?: EncoderHookSystem;
+  attachedHooks = new WeakMap<EncoderHook, boolean>();
+  constructor(data: BData<false>, hookSystem?: EncoderHookSystem) {
     this.data = data;
-    this.hooks = hooks;
-    if (hooks) {
-      consumedHooks.set(hooks, true);
+    this.hookSystem = hookSystem;
+    if (hookSystem) {
+      consumedHookSystems.set(hookSystem, true);
     }
   }
   start(controller: ReadableStreamController<Uint8Array>) {
     this.encode(this.data, controller);
-    if (this.hooks) {
-      for (const hookHandler of this.hooks.values()) {
+    // wind up
+    if (this.hookSystem) {
+      for (const hook of this.hookSystem.values()) {
         // only done once, in case of closing controller twice
-        if (!this.consumedHookHandler.get(hookHandler)) {
-          hookHandler({ value: undefined, done: true });
+        if (!this.attachedHooks.get(hook)) {
+          hook({ value: undefined, done: true });
         }
       }
     }
@@ -94,13 +102,13 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
       for (const member of data) {
         // push path
         this.path.push(counter);
-        // if hooks are registered
-        if (this.hooks) {
-          const hookHandler = this.hooks.get(this.path);
-          if (hookHandler) {
-            const newController = addHandler(controller, hookHandler);
+        // if hook system is provided
+        if (this.hookSystem) {
+          const hook = this.hookSystem.get(this.path);
+          if (hook) {
+            const newController = attachHook(controller, hook);
             this.encode(member, newController);
-            hookHandler({ value: undefined, done: true });
+            hook({ value: undefined, done: true });
           } else {
             this.encode(member, controller);
           }
@@ -135,14 +143,14 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
           this.path.push(key);
           // encode key
           this.encode(key, controller);
-          // if hooks are registered
-          if (this.hooks) {
-            const hookHandler = this.hooks.get(this.path);
-            if (hookHandler) {
-              const newController = addHandler(controller, hookHandler);
+          // if hook system is provided
+          if (this.hookSystem) {
+            const hook = this.hookSystem.get(this.path);
+            if (hook) {
+              const newController = attachHook(controller, hook);
               this.encode(value, newController);
-              hookHandler({ value: undefined, done: true });
-              this.consumedHookHandler.set(hookHandler, true);
+              hook({ value: undefined, done: true });
+              this.attachedHooks.set(hook, true);
             } else {
               this.encode(value, controller);
             }
@@ -166,14 +174,14 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
         this.path.push(key);
         // encode key
         this.encode(key, controller);
-        // if hooks are registered
-        if (this.hooks) {
-          const hookHandler = this.hooks.get(this.path);
-          if (hookHandler) {
-            const newController = addHandler(controller, hookHandler);
+        // if hook system is provided
+        if (this.hookSystem) {
+          const hook = this.hookSystem.get(this.path);
+          if (hook) {
+            const newController = attachHook(controller, hook);
             this.encode(value, newController);
-            hookHandler({ value: undefined, done: true });
-            this.consumedHookHandler.set(hookHandler, true);
+            hook({ value: undefined, done: true });
+            this.attachedHooks.set(hook, true);
           } else {
             this.encode(value, controller);
           }
@@ -187,24 +195,24 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
 }
 
 /**
- * BEncode
+ * Bencode
  * @param data
- * @param hooks
+ * @param hookSystem
  * @returns readable stream of the bencoded data
  */
-export function encode(data: BData<false>, hooks?: EncoderHooks) {
-  return new ReadableStream(new EncoderUnderlyingSource(data, hooks));
+export function encode(data: BData<false>, hookSystem?: EncoderHookSystem) {
+  return new ReadableStream(new EncoderUnderlyingSource(data, hookSystem));
 }
 
 /**
- * Add handler to controller
+ * Attach hook to controller
  * @param controller
- * @param hookHandler
+ * @param hook
  * @returns
  */
-function addHandler(
+function attachHook(
   controller: ReadableStreamController<Uint8Array>,
-  hookHandler: EncoderHookHandler
+  hook: EncoderHook
 ) {
   const newController = new Proxy(controller, {
     get: function (target, prop, receiver) {
@@ -212,7 +220,7 @@ function addHandler(
         case "enqueue":
           return ((chunk: Uint8Array) => {
             target.enqueue(chunk);
-            hookHandler({
+            hook({
               value: chunk,
               done: false,
             });
@@ -226,21 +234,20 @@ function addHandler(
 }
 
 /**
- * Get a uint8 array stream hook handler
- * @returns a uint8 array readable stream
+ * Register a hook and consume the result as an uint8 array readable stream
+ * @param path
+ * @param hookSystem
+ * @returns an uint8 array readable stream
  */
 export function useUint8ArrayStreamHook(
-  path: Iterable<string>,
-  hooks: EncoderHooks
-): [ReadableStream<Uint8Array>] {
+  path: EncoderHookPath,
+  hookSystem: EncoderHookSystem
+): ReadableStream<Uint8Array> {
   const ref = {
     controller: null as ReadableStreamController<Uint8Array> | null,
   };
 
-  const hookHandler = ({
-    value,
-    done,
-  }: IteratorResult<Uint8Array, undefined>) => {
+  const hook = ({ value, done }: IteratorResult<Uint8Array, undefined>) => {
     if (ref.controller === null) {
       return;
     }
@@ -256,7 +263,7 @@ export function useUint8ArrayStreamHook(
       ref.controller = controller;
     },
     pull(controller) {
-      if (!consumedHooks.get(hooks)) {
+      if (!consumedHookSystems.get(hookSystem)) {
         // prevent endless awaiting when this readable stream is consumed as promise
         console.warn("You need to call encode() first and then consume hooks.");
         controller.close();
@@ -265,33 +272,38 @@ export function useUint8ArrayStreamHook(
     },
   });
 
-  hooks.set(path, hookHandler);
+  // register hook in hook system
+  hookSystem.set(path, hook);
 
-  return [readableStream];
+  return readableStream;
 }
 
 /**
- * Get an array buffer promise hook handler
- * @returns an array buffer
+ * Register a hook and consume the result as an array buffer promise
+ * @param path
+ * @param hookSystem
+ * @returns an array buffer promise
  */
 export function useArrayBufferPromiseHook(
-  path: Iterable<string>,
-  hooks: EncoderHooks
-): [Promise<ArrayBuffer>] {
-  const [readableStream] = useUint8ArrayStreamHook(path, hooks);
+  path: EncoderHookPath,
+  hookSystem: EncoderHookSystem
+): Promise<ArrayBuffer> {
+  const readableStream = useUint8ArrayStreamHook(path, hookSystem);
   const arrayBufferPromise = new Response(readableStream).arrayBuffer();
-  return [arrayBufferPromise];
+  return arrayBufferPromise;
 }
 
 /**
- * Get an text promise hook handler
- * @returns an text promise
+ * Register a hook and consume the result as a text promise
+ * @param path
+ * @param hookSystem
+ * @returns a text promise
  */
 export function useTextPromiseHook(
-  path: Iterable<string>,
-  hooks: EncoderHooks
-): [Promise<string>] {
-  const [readableStream] = useUint8ArrayStreamHook(path, hooks);
+  path: EncoderHookPath,
+  hookSystem: EncoderHookSystem
+): Promise<string> {
+  const readableStream = useUint8ArrayStreamHook(path, hookSystem);
   const textPromise = new Response(readableStream).text();
-  return [textPromise];
+  return textPromise;
 }
