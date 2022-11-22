@@ -815,7 +815,7 @@ async function createHybrid(
 
   const pieceLayerReadableStreamPromise: Promise<ReadableStream<Uint8Array>>[] =
     [];
-  const lastFileIndex = totalFileCount - 1;
+  let lastFileIndex = totalFileCount - 1;
   let fileIndex = -1;
   for (const [fileNode, file] of fileNodeToFileEntries) {
     ++fileIndex;
@@ -846,7 +846,8 @@ async function createHybrid(
     }
     const paddingSize = iOpts.pieceLength - remainderSize;
     const paddingFile = createPaddingFile(paddingSize, commonDir);
-    files.splice(fileIndex + 1, 0, paddingFile);
+    files.splice(++fileIndex, 0, paddingFile);
+    ++lastFileIndex;
   }
   const v1PiecesReadableStream = concatenateStreams(
     pieceLayerReadableStreamPromise
