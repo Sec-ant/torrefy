@@ -15,7 +15,7 @@ import {
   resolveCommonDirAndTorrentName,
 } from "./utils/fileTree.js";
 import { FileDirLikes } from "./utils/fileDirLike.js";
-import { nextPowerOfTwo } from "./utils/misc.js";
+import { nextPowerOfTwo, getTimeStampSecondsNow } from "./utils/misc.js";
 
 /**
  * support padding attribute on file
@@ -543,13 +543,13 @@ async function createV1(
     const totalPieces = getTotalPieces(files, iOpts.pieceLength);
     await setProgressTotal(totalPieces);
 
-    const pieceLayerReadableStreamPromise: Promise<
+    const pieceLayerReadableStreamPromises: Promise<
       ReadableStream<Uint8Array>
     >[] = [];
     const lastFileIndex = totalFileCount - 1;
     for (let fileIndex = lastFileIndex; fileIndex >= 0; --fileIndex) {
       const file = files[fileIndex] as File;
-      pieceLayerReadableStreamPromise.unshift(
+      pieceLayerReadableStreamPromises.unshift(
         Promise.resolve(
           getPieceLayerReadableStream(file.stream(), {
             pieceLength: iOpts.pieceLength,
@@ -569,8 +569,9 @@ async function createV1(
       const paddingFile = createPaddingFile(paddingSize, commonDir);
       files.splice(fileIndex + 1, 0, paddingFile);
     }
-    v1PiecesReadableStream = concatenateStreams(pieceLayerReadableStreamPromise)
-      .stream as ReadableStream<Uint8Array>;
+    v1PiecesReadableStream = concatenateStreams(
+      pieceLayerReadableStreamPromises
+    ).stream as ReadableStream<Uint8Array>;
   }
   // no padding files
   else {
@@ -603,7 +604,7 @@ async function createV1(
     ...(typeof iOpts.comment === "undefined" ? {} : { comment: iOpts.comment }),
     ...(iOpts.addCreatedBy ? { "created by": CREATED_BY } : {}),
     ...(iOpts.addCreationDate
-      ? { "creation date": (Date.now() / 1000) >> 0 }
+      ? { "creation date": getTimeStampSecondsNow() }
       : {}),
     info: {
       ...(totalFileCount > 1
@@ -726,7 +727,7 @@ async function createV2(
     ...(typeof iOpts.comment === "undefined" ? {} : { comment: iOpts.comment }),
     ...(iOpts.addCreatedBy ? { "created by": CREATED_BY } : {}),
     ...(iOpts.addCreationDate
-      ? { "creation date": (Date.now() / 1000) >> 0 }
+      ? { "creation date": getTimeStampSecondsNow() }
       : {}),
     info: {
       ["file tree"]: fileTree,
@@ -861,7 +862,7 @@ async function createHybrid(
     ...(typeof iOpts.comment === "undefined" ? {} : { comment: iOpts.comment }),
     ...(iOpts.addCreatedBy ? { "created by": CREATED_BY } : {}),
     ...(iOpts.addCreationDate
-      ? { "creation date": (Date.now() / 1000) >> 0 }
+      ? { "creation date": getTimeStampSecondsNow() }
       : {}),
     info: {
       "file tree": fileTree,

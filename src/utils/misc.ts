@@ -82,6 +82,14 @@ export function nextPowerOfTwo(number: number) {
 }
 
 /**
+ * Get time stamp seconds now
+ * @returns time stamp now in seconds
+ */
+export function getTimeStampSecondsNow() {
+  return Math.round(Date.now() / 1000);
+}
+
+/**
  * Calculate the root hash of the merkle tree
  * constructed by given leaves
  * @param leaves merkle leaves
