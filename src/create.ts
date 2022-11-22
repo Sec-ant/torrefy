@@ -5,7 +5,6 @@ import { ChunkSplitter } from "./transformers/chunkSplitter.js";
 import { MerkleRootCalculator } from "./transformers/merkleRootCalculator.js";
 import { MerkleTreeBalancer } from "./transformers/merkleTreeBalancer.js";
 import { PieceHasher } from "./transformers/pieceHasher.js";
-
 import { BObject } from "./utils/codec.js";
 import {
   FileAttrs,
@@ -17,6 +16,7 @@ import {
 } from "./utils/fileTree.js";
 import { FileDirLikes } from "./utils/fileDirLike.js";
 import { nextPowerOfTwo } from "./utils/misc.js";
+
 /**
  * support padding attribute on file
  */
@@ -103,6 +103,16 @@ interface TorrentOptionsBase {
    * will automatically calculate when this value is missing
    */
   pieceLength?: number;
+  /**
+   * source
+   */
+  source?: string;
+  /**
+   * url list
+   *
+   * [BEP 9](http://www.bittorrent.org/beps/bep_0019.html#metadata-extension)
+   */
+  urlList?: string[];
 }
 
 /**
@@ -167,8 +177,13 @@ export type TorrentOptions<T extends TorrentType = TorrentType> =
     ? TorrentOptionsHybrid
     : never;
 
-type UnrequiredOptions = "announce" | "announceList" | "comment" | "name";
-// | "pieceLength";
+type UnrequiredOptions =
+  | "announce"
+  | "announceList"
+  | "comment"
+  | "name"
+  | "source"
+  | "urlList";
 
 type InternalTorrentOptionsV1 = TorrentOptionsV1 &
   Required<Omit<TorrentOptionsV1, UnrequiredOptions>>;
@@ -190,8 +205,6 @@ type InternalTorrentOptions<T extends TorrentType = TorrentType> =
     : T extends TorrentType.HYBRID
     ? InternalTorrentOptionsHybrid
     : never;
-
-//===================================================================================
 
 //===================================================================================
 
@@ -221,6 +234,10 @@ interface InfoBase extends BObject<false> {
    * is private torrent
    */
   private?: boolean;
+  /**
+   * source
+   */
+  source?: string;
 }
 
 /**
@@ -508,6 +525,8 @@ async function createV1(
   ) {
     iOpts.announce = iOpts.announceList[0]?.[0];
   }
+  // sanitize url list
+  iOpts.urlList = sanitizeUrlList(iOpts.urlList);
   // progress hook
   const [updateProgress, setProgressTotal] = useProgress(0, onProgress);
   // torrent name and common dir
@@ -580,9 +599,7 @@ async function createV1(
     ...(typeof iOpts.announce === "undefined"
       ? {}
       : { announce: iOpts.announce }),
-    ...(typeof iOpts.announceList === "undefined"
-      ? {}
-      : { "announce-list": iOpts.announceList }),
+    ...(iOpts.announceList ? { "announce-list": iOpts.announceList } : {}),
     ...(typeof iOpts.comment === "undefined" ? {} : { comment: iOpts.comment }),
     ...(iOpts.addCreatedBy ? { "created by": CREATED_BY } : {}),
     ...(iOpts.addCreationDate
@@ -597,9 +614,7 @@ async function createV1(
                 "/"
               );
               // remove common dir
-              if (typeof commonDir !== "undefined") {
-                filePath.shift();
-              }
+              commonDir && filePath.shift();
               // emit
               return {
                 ...(file.padding ? { attr: "p" as FileAttrs } : {}),
@@ -615,7 +630,9 @@ async function createV1(
       "piece length": iOpts.pieceLength,
       pieces: await new Response(v1PiecesReadableStream).arrayBuffer(),
       ...(iOpts.isPrivate ? { private: true } : {}),
+      ...(typeof iOpts.source === "undefined" ? {} : { source: iOpts.source }),
     },
+    ...(iOpts.urlList ? { "url-list": iOpts.urlList } : {}),
   };
 
   return metaInfo;
@@ -673,6 +690,8 @@ async function createV2(
   ) {
     iOpts.announce = iOpts.announceList[0]?.[0];
   }
+  // sanitize url list
+  iOpts.urlList = sanitizeUrlList(iOpts.urlList);
   // assign progress total (in piece unit)
   const totalPieces = getTotalPieces(files, iOpts.pieceLength);
   // progress hook
@@ -703,9 +722,7 @@ async function createV2(
     ...(typeof iOpts.announce === "undefined"
       ? {}
       : { announce: iOpts.announce }),
-    ...(typeof iOpts.announceList === "undefined"
-      ? {}
-      : { "announce-list": iOpts.announceList }),
+    ...(iOpts.announceList ? { "announce-list": iOpts.announceList } : {}),
     ...(typeof iOpts.comment === "undefined" ? {} : { comment: iOpts.comment }),
     ...(iOpts.addCreatedBy ? { "created by": CREATED_BY } : {}),
     ...(iOpts.addCreationDate
@@ -718,9 +735,11 @@ async function createV2(
       "piece length": iOpts.pieceLength,
       // only add private field when it is private
       ...(iOpts.isPrivate ? { private: true } : {}),
+      ...(typeof iOpts.source === "undefined" ? {} : { source: iOpts.source }),
     },
     // piece layers must not be abscent
     "piece layers": pieceLayers,
+    ...(iOpts.urlList ? { "url-list": iOpts.urlList } : {}),
   };
 
   return metaInfo;
@@ -778,6 +797,8 @@ async function createHybrid(
   ) {
     iOpts.announce = iOpts.announceList[0]?.[0];
   }
+  // sanitize url list
+  iOpts.urlList = sanitizeUrlList(iOpts.urlList);
   // progress hook
   const [updateProgress] = useProgress(
     getTotalPieces(files, iOpts.pieceLength) * 2,
@@ -835,9 +856,7 @@ async function createHybrid(
     ...(typeof iOpts.announce === "undefined"
       ? {}
       : { announce: iOpts.announce }),
-    ...(typeof iOpts.announceList === "undefined"
-      ? {}
-      : { "announce-list": iOpts.announceList }),
+    ...(iOpts.announceList ? { "announce-list": iOpts.announceList } : {}),
     ...(typeof iOpts.comment === "undefined" ? {} : { comment: iOpts.comment }),
     ...(iOpts.addCreatedBy ? { "created by": CREATED_BY } : {}),
     ...(iOpts.addCreationDate
@@ -853,9 +872,7 @@ async function createHybrid(
                 "/"
               );
               // remove common dir
-              if (typeof commonDir !== "undefined") {
-                filePath.shift();
-              }
+              commonDir && filePath.shift();
               // emit
               return {
                 ...(file.padding ? { attr: "p" as FileAttrs } : {}),
@@ -874,9 +891,11 @@ async function createHybrid(
       pieces: await new Response(v1PiecesReadableStream).arrayBuffer(),
       // only add private field when it is private
       ...(iOpts.isPrivate ? { private: true } : {}),
+      ...(typeof iOpts.source === "undefined" ? {} : { source: iOpts.source }),
     },
     // piece layers must not be abscent
     "piece layers": pieceLayers,
+    ...(iOpts.urlList ? { "url-list": iOpts.urlList } : {}),
   };
 
   return metaInfo;
@@ -1082,6 +1101,21 @@ function collapseAnnounceList(
     return undefined;
   }
   return collapsedAnnounceList;
+}
+
+/**
+ * Sanitize url list
+ * @param urlList
+ * @returns sanitized url list
+ */
+function sanitizeUrlList(urlList: string[] | undefined): string[] | undefined {
+  if (typeof urlList === "undefined") {
+    return undefined;
+  }
+  if (urlList.length === 0) {
+    return undefined;
+  }
+  return urlList;
 }
 
 /**
