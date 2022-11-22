@@ -160,7 +160,8 @@ export function resolveCommonDirAndTorrentName(
   // zero or multi file or folders
   if (fileTree.size > 1 || fileTree.size === 0) {
     return {
-      name: name ?? v4(),
+      // TODO: change UUID v4 to v5 ?
+      name: name || v4(),
       commonDir: undefined,
     };
   }
@@ -170,13 +171,13 @@ export function resolveCommonDirAndTorrentName(
   // one file
   if (isFileTreeFileNode(firstNode)) {
     return {
-      name: firstNodeName,
+      name: name || firstNodeName,
       commonDir: undefined,
     };
   }
   // one dir
   return {
-    name: name ?? firstNodeName,
+    name: name || firstNodeName,
     commonDir: firstNodeName,
   };
 }
