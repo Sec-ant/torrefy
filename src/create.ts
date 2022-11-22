@@ -8,7 +8,7 @@ import { PieceHasher } from "./transformers/pieceHasher.js";
 import { BObject } from "./utils/codec.js";
 import {
   FileAttrs,
-  FilesList,
+  FileListV1,
   FileTreeDirNode,
   FileTreeFileNode,
   populateFileTree,
@@ -243,7 +243,7 @@ interface InfoBase extends BObject<false> {
 /**
  * v1 info base
  */
-interface InfoV1Base extends InfoBase {
+interface InfoBaseV1 extends InfoBase {
   /**
    * Pieces maps to a string whose length is a multiple of 20
    *
@@ -255,21 +255,21 @@ interface InfoV1Base extends InfoBase {
 /**
  * v1 single file info
  */
-interface InfoV1SingleFile extends InfoV1Base {
+interface InfoSingleFileV1 extends InfoBaseV1 {
   length: number;
 }
 
 /**
  * v1 multi file info
  */
-interface InfoV1MultiFiles extends InfoV1Base {
-  files: FilesList;
+interface InfoMultiFileV1 extends InfoBaseV1 {
+  files: FileListV1;
 }
 
 /**
  * v1 info
  */
-type InfoV1 = InfoV1SingleFile | InfoV1MultiFiles;
+type InfoV1 = InfoSingleFileV1 | InfoMultiFileV1;
 
 /**
  * v2 info
@@ -294,17 +294,17 @@ interface InfoV2 extends InfoBase {
 /**
  * hybrid single file info
  */
-interface InfoHybridSingleFile extends InfoV1SingleFile, InfoV2 {}
+interface InfoSingleFileHybrid extends InfoSingleFileV1, InfoV2 {}
 
 /**
  * hybrid multi file info
  */
-interface InfoHybridMultiFiles extends InfoV1MultiFiles, InfoV2 {}
+interface InfoMultiFileHybrid extends InfoMultiFileV1, InfoV2 {}
 
 /**
  * hybrid info
  */
-type InfoHybrid = InfoHybridSingleFile | InfoHybridMultiFiles;
+type InfoHybrid = InfoSingleFileHybrid | InfoMultiFileHybrid;
 
 /**
  * info
@@ -424,9 +424,9 @@ export enum CommonPieceLength {
 }
 
 /**
- * current meta version = 2
+ * default meta version = 2
  */
-const CURRENT_META_VERSION: MetaVersion = 2;
+const DEFAULT_META_VERSION: MetaVersion = 2;
 
 /**
  * default v1 torrent options
@@ -451,7 +451,7 @@ const defaultTorrentOptionsV2: InternalTorrentOptions<TorrentType.V2> = {
   addCreationDate: true,
   blockLength: DEFAULT_BLOCK_LENGTH,
   pieceLength: NaN,
-  metaVersion: CURRENT_META_VERSION,
+  metaVersion: DEFAULT_META_VERSION,
   isPrivate: false,
 };
 
@@ -465,7 +465,7 @@ const defaultTorrentOptionsHybrid: InternalTorrentOptions<TorrentType.HYBRID> =
     addCreationDate: true,
     blockLength: DEFAULT_BLOCK_LENGTH,
     pieceLength: NaN,
-    metaVersion: CURRENT_META_VERSION,
+    metaVersion: DEFAULT_META_VERSION,
     isPrivate: false,
   };
 
@@ -551,7 +551,7 @@ async function createV1(
       const file = files[fileIndex] as File;
       pieceLayerReadableStreamPromise.unshift(
         Promise.resolve(
-          getV1PieceLayerReadableStream(file.stream(), {
+          getPieceLayerReadableStream(file.stream(), {
             pieceLength: iOpts.pieceLength,
             padding: fileIndex !== lastFileIndex,
             updateProgress,
@@ -585,7 +585,7 @@ async function createV1(
       files.map((file) => Promise.resolve(file.stream()))
     );
     // and then hash it
-    v1PiecesReadableStream = getV1PieceLayerReadableStream(
+    v1PiecesReadableStream = getPieceLayerReadableStream(
       concatenatedFileReadableStream,
       {
         pieceLength: iOpts.pieceLength,
@@ -823,7 +823,7 @@ async function createHybrid(
     const [v1FileStream, v2FileStream] = file.stream().tee();
     pieceLayerReadableStreamPromise.unshift(
       Promise.resolve(
-        getV1PieceLayerReadableStream(v1FileStream, {
+        getPieceLayerReadableStream(v1FileStream, {
           pieceLength: iOpts.pieceLength,
           padding: fileIndex !== lastFileIndex,
           updateProgress,
@@ -936,7 +936,7 @@ async function populatePieceLayersAndFileNodes(
 ) {
   // get pieces root and piece layer readable streams
   const { piecesRootReadableStream, pieceLayerReadableStream } =
-    getV2PiecesRootAndPieceLayerReadableStreams(fileStream, opts);
+    getPiecesRootAndPieceLayerReadableStreams(fileStream, opts);
   // get buffer promise from pieces root
   const piecesRootArrayBufferPromise = new Response(
     piecesRootReadableStream
@@ -965,7 +965,7 @@ async function populatePieceLayersAndFileNodes(
  * @param opts options
  * @returns piece layer
  */
-function getV1PieceLayerReadableStream(
+function getPieceLayerReadableStream(
   stream: ReadableStream<Uint8Array>,
   opts: {
     pieceLength: number;
@@ -989,7 +989,7 @@ function getV1PieceLayerReadableStream(
  * @param opts
  * @returns
  */
-function getV2PiecesRootAndPieceLayerReadableStreams(
+function getPiecesRootAndPieceLayerReadableStreams(
   stream: ReadableStream<Uint8Array>,
   opts: {
     blockLength: number;

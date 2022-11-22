@@ -105,7 +105,7 @@ export interface FilePropsV2 extends FilePropsBase {
 /**
  * v1 file list
  */
-export type FilesList = FilePropsV1[];
+export type FileListV1 = FilePropsV1[];
 
 /**
  * v2 file tree file node
