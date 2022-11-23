@@ -18,29 +18,29 @@ export enum TokenType {
   DictionaryEnd = "DictionaryEnd",
 }
 
-interface IntegerToken {
+export interface IntegerToken {
   type: TokenType.Integer;
   value: Uint8Array;
 }
 
-interface ByteStringToken {
+export interface ByteStringToken {
   type: TokenType.ByteString;
   value: Uint8Array;
 }
 
-interface ListStartToken {
+export interface ListStartToken {
   type: TokenType.ListStart;
 }
 
-interface ListEndToken {
+export interface ListEndToken {
   type: TokenType.ListEnd;
 }
 
-interface DictionaryStartToken {
+export interface DictionaryStartToken {
   type: TokenType.DictionaryStart;
 }
 
-interface DictionaryEndToken {
+export interface DictionaryEndToken {
   type: TokenType.DictionaryEnd;
 }
 

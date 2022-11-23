@@ -18,29 +18,30 @@ import { v4 } from "uuid";
 /**
  * symlink file attribute
  */
-type SymlinkAttr = "s";
+export type SymlinkAttr = "s";
 
 /**
  * executable file attribute
  */
-type ExecutableAttr = "x";
+export type ExecutableAttr = "x";
 
 /**
  * hidden file attribute
  */
-type HiddenAttr = "h";
+export type HiddenAttr = "h";
 
 /**
  * padding file attribute
  */
-type PaddingFileAttr = "p";
+export type PaddingFileAttr = "p";
 
 /**
  * permutations template
  */
-type Permutations<T extends string, U extends string = T> = T extends unknown
-  ? T | `${T}${Permutations<Exclude<U, T>>}`
-  : never;
+export type Permutations<
+  T extends string,
+  U extends string = T
+> = T extends unknown ? T | `${T}${Permutations<Exclude<U, T>>}` : never;
 
 /**
  * file attributes
@@ -52,7 +53,7 @@ export type FileAttrs = Permutations<
 /**
  * base file props
  */
-interface FilePropsBase extends BObject<false> {
+export interface FilePropsBase extends BObject<false> {
   /**
    * Length of the file in bytes
    *

@@ -1,29 +1,29 @@
 // bencode integer type
-type BIntegerStrict = number | bigint;
-type BIntegerLoose = BIntegerStrict | boolean;
+export type BIntegerStrict = number | bigint;
+export type BIntegerLoose = BIntegerStrict | boolean;
 export type BInteger<Strict extends boolean = true> = Strict extends true
   ? BIntegerStrict
   : BIntegerLoose;
 
 // bencode byte string type
-type BByteStringStrict = string;
-type BByteStringLoose = BByteStringStrict | ArrayBuffer;
+export type BByteStringStrict = string;
+export type BByteStringLoose = BByteStringStrict | ArrayBuffer;
 export type BByteString<Strict extends boolean = true> = Strict extends true
   ? BByteStringStrict
   : BByteStringLoose;
 
 // bencode list type
-type BListStrict = BData<true>[];
-type BListLoose = BData<false>[];
+export type BListStrict = BData<true>[];
+export type BListLoose = BData<false>[];
 export type BList<Strict extends boolean = true> = Strict extends true
   ? BListStrict
   : BListLoose;
 
 // bencode dictionary type
-interface BObjectStrict {
+export interface BObjectStrict {
   [key: BByteString<true>]: BData<true>;
 }
-interface BObjectLoose {
+export interface BObjectLoose {
   [key: BByteString<true>]: BData<false>;
 }
 export type BObject<Strict extends boolean = true> = Strict extends true
@@ -31,19 +31,19 @@ export type BObject<Strict extends boolean = true> = Strict extends true
   : BObjectLoose;
 export type BMap = Map<BByteString<false>, BData<false>>;
 
-type BDictionaryStrict = BObject<true>;
-type BDictionaryLoose = BObject<false> | BMap;
+export type BDictionaryStrict = BObject<true>;
+export type BDictionaryLoose = BObject<false> | BMap;
 export type BDictionary<Strict extends boolean = true> = Strict extends true
   ? BDictionaryStrict
   : BDictionaryLoose;
 
 // bencode data type
-type BDataStrict =
+export type BDataStrict =
   | BInteger<true>
   | BByteString<true>
   | BList<true>
   | BDictionary<true>;
-type BDataLoose =
+export type BDataLoose =
   | BInteger<false>
   | BByteString<false>
   | BList<false>

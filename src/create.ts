@@ -35,7 +35,7 @@ declare const CREATED_BY: string;
 /**
  * meta version can only be 2 at the time being
  */
-type MetaVersion = 2;
+export type MetaVersion = 2;
 
 /**
  * torrent type: v1, v2, hybrid
@@ -64,7 +64,7 @@ export enum TorrentType {
 /**
  * base torrent options
  */
-interface TorrentOptionsBase {
+export interface TorrentOptionsBase {
   /**
    * add created by whom
    */
@@ -118,7 +118,7 @@ interface TorrentOptionsBase {
 /**
  * v1 torrent options
  */
-interface TorrentOptionsV1 extends TorrentOptionsBase {
+export interface TorrentOptionsV1 extends TorrentOptionsBase {
   /**
    * add padding files
    * this option is only available in V1 type torrents
@@ -140,7 +140,7 @@ interface TorrentOptionsV1 extends TorrentOptionsBase {
 /**
  * v2 torrent options
  */
-interface TorrentOptionsV2 extends TorrentOptionsBase {
+export interface TorrentOptionsV2 extends TorrentOptionsBase {
   /**
    * meta version
    */
@@ -154,7 +154,7 @@ interface TorrentOptionsV2 extends TorrentOptionsBase {
 /**
  * v1 + v2 hybrid torrent options
  */
-interface TorrentOptionsHybrid extends TorrentOptionsBase {
+export interface TorrentOptionsHybrid extends TorrentOptionsBase {
   /**
    * meta version
    */
@@ -211,7 +211,7 @@ type InternalTorrentOptions<T extends TorrentType = TorrentType> =
 /**
  * info base
  */
-interface InfoBase extends BObject<false> {
+export interface InfoBase extends BObject<false> {
   /**
    * The suggested name to save the file (or directory) as.
    * It is purely advisory
@@ -243,7 +243,7 @@ interface InfoBase extends BObject<false> {
 /**
  * v1 info base
  */
-interface InfoBaseV1 extends InfoBase {
+export interface InfoBaseV1 extends InfoBase {
   /**
    * Pieces maps to a string whose length is a multiple of 20
    *
@@ -255,26 +255,26 @@ interface InfoBaseV1 extends InfoBase {
 /**
  * v1 single file info
  */
-interface InfoSingleFileV1 extends InfoBaseV1 {
+export interface InfoSingleFileV1 extends InfoBaseV1 {
   length: number;
 }
 
 /**
  * v1 multi file info
  */
-interface InfoMultiFileV1 extends InfoBaseV1 {
+export interface InfoMultiFileV1 extends InfoBaseV1 {
   files: FileListV1;
 }
 
 /**
  * v1 info
  */
-type InfoV1 = InfoSingleFileV1 | InfoMultiFileV1;
+export type InfoV1 = InfoSingleFileV1 | InfoMultiFileV1;
 
 /**
  * v2 info
  */
-interface InfoV2 extends InfoBase {
+export interface InfoV2 extends InfoBase {
   /**
    * A tree of dictionaries where dictionary keys
    * represent UTF-8 encoded path elements
@@ -294,17 +294,17 @@ interface InfoV2 extends InfoBase {
 /**
  * hybrid single file info
  */
-interface InfoSingleFileHybrid extends InfoSingleFileV1, InfoV2 {}
+export interface InfoSingleFileHybrid extends InfoSingleFileV1, InfoV2 {}
 
 /**
  * hybrid multi file info
  */
-interface InfoMultiFileHybrid extends InfoMultiFileV1, InfoV2 {}
+export interface InfoMultiFileHybrid extends InfoMultiFileV1, InfoV2 {}
 
 /**
  * hybrid info
  */
-type InfoHybrid = InfoSingleFileHybrid | InfoMultiFileHybrid;
+export type InfoHybrid = InfoSingleFileHybrid | InfoMultiFileHybrid;
 
 /**
  * info
@@ -327,7 +327,7 @@ export type PieceLayers = Map<ArrayBuffer, ArrayBuffer>;
 /**
  * base meta info
  */
-interface MetaInfoBase extends BObject<false> {
+export interface MetaInfoBase extends BObject<false> {
   /**
    * The URL of the tracker
    *
@@ -367,14 +367,14 @@ interface MetaInfoBase extends BObject<false> {
 /**
  * v1 meta info
  */
-interface MetaInfoV1 extends MetaInfoBase {
+export interface MetaInfoV1 extends MetaInfoBase {
   info: Info<TorrentType.V1>;
 }
 
 /**
  * v2 meta info
  */
-interface MetaInfoV2 extends MetaInfoBase {
+export interface MetaInfoV2 extends MetaInfoBase {
   info: Info<TorrentType.V2>;
   ["piece layers"]?: PieceLayers;
 }
@@ -382,7 +382,7 @@ interface MetaInfoV2 extends MetaInfoBase {
 /**
  * hybrid meta info
  */
-interface MetaInfoHybrid extends MetaInfoBase {
+export interface MetaInfoHybrid extends MetaInfoBase {
   info: Info<TorrentType.HYBRID>;
   ["piece layers"]?: PieceLayers;
 }
@@ -398,11 +398,6 @@ export type MetaInfo<T extends TorrentType = TorrentType> =
     : T extends TorrentType.HYBRID
     ? MetaInfoHybrid
     : never;
-
-/**
- * default block length 1 << 14 = 16384
- */
-export const DEFAULT_BLOCK_LENGTH = 1 << 14;
 
 /**
  * common piece lengths
@@ -424,9 +419,14 @@ export enum CommonPieceLength {
 }
 
 /**
+ * default block length 1 << 14 = 16384
+ */
+export const BLOCK_LENGTH = 1 << 14;
+
+/**
  * default meta version = 2
  */
-const DEFAULT_META_VERSION: MetaVersion = 2;
+export const META_VERSION: MetaVersion = 2;
 
 /**
  * default v1 torrent options
@@ -436,7 +436,7 @@ const defaultTorrentOptionsV1: InternalTorrentOptions<TorrentType.V1> = {
   addCreatedBy: true,
   addCreationDate: true,
   addPaddingFiles: false,
-  blockLength: DEFAULT_BLOCK_LENGTH,
+  blockLength: BLOCK_LENGTH,
   pieceLength: NaN,
   sortFiles: true,
   isPrivate: false,
@@ -449,9 +449,9 @@ const defaultTorrentOptionsV2: InternalTorrentOptions<TorrentType.V2> = {
   type: TorrentType.V2,
   addCreatedBy: true,
   addCreationDate: true,
-  blockLength: DEFAULT_BLOCK_LENGTH,
+  blockLength: BLOCK_LENGTH,
   pieceLength: NaN,
-  metaVersion: DEFAULT_META_VERSION,
+  metaVersion: META_VERSION,
   isPrivate: false,
 };
 
@@ -463,9 +463,9 @@ const defaultTorrentOptionsHybrid: InternalTorrentOptions<TorrentType.HYBRID> =
     type: TorrentType.HYBRID,
     addCreatedBy: true,
     addCreationDate: true,
-    blockLength: DEFAULT_BLOCK_LENGTH,
+    blockLength: BLOCK_LENGTH,
     pieceLength: NaN,
-    metaVersion: DEFAULT_META_VERSION,
+    metaVersion: META_VERSION,
     isPrivate: false,
   };
 
