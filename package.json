@@ -45,8 +45,8 @@
   "devDependencies": {
     "@types/uuid": "^8.3.4",
     "@types/wicg-file-system-access": "^2020.9.5",
-    "@typescript-eslint/eslint-plugin": "^5.43.0",
-    "@typescript-eslint/parser": "^5.43.0",
+    "@typescript-eslint/eslint-plugin": "^5.44.0",
+    "@typescript-eslint/parser": "^5.44.0",
     "eslint": "^8.28.0",
     "http-server": "^14.1.1",
     "mocha": "^10.1.0",
