@@ -29,7 +29,7 @@ common piece lengths
 
 #### Defined in
 
-[src/create.ts:398](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L398)
+[src/create.ts:410](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L410)
 
 ___
 
@@ -39,7 +39,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:395](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L395)
+[src/create.ts:407](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L407)
 
 ___
 
@@ -49,7 +49,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:405](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L405)
+[src/create.ts:417](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L417)
 
 ___
 
@@ -59,7 +59,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:401](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L401)
+[src/create.ts:413](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L413)
 
 ___
 
@@ -69,7 +69,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:399](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L399)
+[src/create.ts:411](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L411)
 
 ___
 
@@ -79,7 +79,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:402](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L402)
+[src/create.ts:414](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L414)
 
 ___
 
@@ -89,7 +89,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:396](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L396)
+[src/create.ts:408](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L408)
 
 ___
 
@@ -99,7 +99,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:406](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L406)
+[src/create.ts:418](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L418)
 
 ___
 
@@ -109,7 +109,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:403](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L403)
+[src/create.ts:415](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L415)
 
 ___
 
@@ -119,7 +119,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:400](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L400)
+[src/create.ts:412](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L412)
 
 ___
 
@@ -129,7 +129,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:397](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L397)
+[src/create.ts:409](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L409)
 
 ___
 
@@ -139,4 +139,4 @@ ___
 
 #### Defined in
 
-[src/create.ts:404](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L404)
+[src/create.ts:416](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L416)

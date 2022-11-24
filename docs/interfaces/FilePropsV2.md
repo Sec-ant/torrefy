@@ -6,7 +6,7 @@ v2 file props
 
 ## Hierarchy
 
-- `FilePropsBase`
+- [`FilePropsBase`](FilePropsBase.md)
 
   ↳ **`FilePropsV2`**
 
@@ -36,11 +36,11 @@ p = padding file
 
 #### Inherited from
 
-FilePropsBase.attr
+[FilePropsBase](FilePropsBase.md).[attr](FilePropsBase.md#attr)
 
 #### Defined in
 
-[src/utils/fileTree.ts:75](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L75)
+[src/utils/fileTree.ts:76](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L76)
 
 ___
 
@@ -56,11 +56,11 @@ Length of the file in bytes
 
 #### Inherited from
 
-FilePropsBase.length
+[FilePropsBase](FilePropsBase.md).[length](FilePropsBase.md#length)
 
 #### Defined in
 
-[src/utils/fileTree.ts:63](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L63)
+[src/utils/fileTree.ts:64](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L64)
 
 ___
 
@@ -76,4 +76,4 @@ constructed from 16KiB blocks of the file
 
 #### Defined in
 
-[src/utils/fileTree.ts:102](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L102)
+[src/utils/fileTree.ts:103](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L103)

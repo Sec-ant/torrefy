@@ -40,7 +40,7 @@ TransformStream&lt;
 
 #### Defined in
 
-[src/transformers/merkleTreeBalancer.ts:40](https://github.com/Sec-ant/bepjs/blob/9590005/src/transformers/merkleTreeBalancer.ts#L40)
+[src/transformers/merkleTreeBalancer.ts:40](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/transformers/merkleTreeBalancer.ts#L40)
 
 ## Properties
 

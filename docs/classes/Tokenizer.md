@@ -31,13 +31,13 @@ TransformStream&lt;Uint8Array, Token\&gt;.constructor
 
 #### Defined in
 
-[src/transformers/tokenizer.ts:248](https://github.com/Sec-ant/bepjs/blob/9590005/src/transformers/tokenizer.ts#L248)
+[src/transformers/tokenizer.ts:248](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/transformers/tokenizer.ts#L248)
 
 ## Properties
 
 ### readable
 
-• `Readonly` **readable**: `ReadableStream`<`IntegerToken` \| `ByteStringToken` \| `ListStartToken` \| `ListEndToken` \| `DictionaryStartToken` \| `DictionaryEndToken`\>
+• `Readonly` **readable**: `ReadableStream`<[`IntegerToken`](../interfaces/IntegerToken.md) \| [`ByteStringToken`](../interfaces/ByteStringToken.md) \| [`ListStartToken`](../interfaces/ListStartToken.md) \| [`ListEndToken`](../interfaces/ListEndToken.md) \| [`DictionaryStartToken`](../interfaces/DictionaryStartToken.md) \| [`DictionaryEndToken`](../interfaces/DictionaryEndToken.md)\>
 
 #### Inherited from
 

@@ -21,37 +21,80 @@
 
 ### Interfaces
 
+- [BObjectLoose](interfaces/BObjectLoose.md)
+- [BObjectStrict](interfaces/BObjectStrict.md)
+- [ByteStringToken](interfaces/ByteStringToken.md)
+- [DictionaryEndToken](interfaces/DictionaryEndToken.md)
+- [DictionaryStartToken](interfaces/DictionaryStartToken.md)
+- [FilePropsBase](interfaces/FilePropsBase.md)
 - [FilePropsV1](interfaces/FilePropsV1.md)
 - [FilePropsV2](interfaces/FilePropsV2.md)
 - [FileTreeFileNode](interfaces/FileTreeFileNode.md)
+- [InfoBase](interfaces/InfoBase.md)
+- [InfoBaseV1](interfaces/InfoBaseV1.md)
+- [InfoMultiFileHybrid](interfaces/InfoMultiFileHybrid.md)
+- [InfoMultiFileV1](interfaces/InfoMultiFileV1.md)
+- [InfoSingleFileHybrid](interfaces/InfoSingleFileHybrid.md)
+- [InfoSingleFileV1](interfaces/InfoSingleFileV1.md)
+- [InfoV2](interfaces/InfoV2.md)
+- [IntegerToken](interfaces/IntegerToken.md)
+- [ListEndToken](interfaces/ListEndToken.md)
+- [ListStartToken](interfaces/ListStartToken.md)
+- [MetaInfoBase](interfaces/MetaInfoBase.md)
+- [MetaInfoHybrid](interfaces/MetaInfoHybrid.md)
+- [MetaInfoV1](interfaces/MetaInfoV1.md)
+- [MetaInfoV2](interfaces/MetaInfoV2.md)
+- [TorrentOptionsBase](interfaces/TorrentOptionsBase.md)
+- [TorrentOptionsHybrid](interfaces/TorrentOptionsHybrid.md)
+- [TorrentOptionsV1](interfaces/TorrentOptionsV1.md)
+- [TorrentOptionsV2](interfaces/TorrentOptionsV2.md)
 
 ### Type Aliases
 
 - [BByteString](modules.md#bbytestring)
+- [BByteStringLoose](modules.md#bbytestringloose)
+- [BByteStringStrict](modules.md#bbytestringstrict)
 - [BData](modules.md#bdata)
+- [BDataLoose](modules.md#bdataloose)
+- [BDataStrict](modules.md#bdatastrict)
 - [BDictionary](modules.md#bdictionary)
+- [BDictionaryLoose](modules.md#bdictionaryloose)
+- [BDictionaryStrict](modules.md#bdictionarystrict)
 - [BInteger](modules.md#binteger)
+- [BIntegerLoose](modules.md#bintegerloose)
+- [BIntegerStrict](modules.md#bintegerstrict)
 - [BList](modules.md#blist)
+- [BListLoose](modules.md#blistloose)
+- [BListStrict](modules.md#bliststrict)
 - [BMap](modules.md#bmap)
 - [BObject](modules.md#bobject)
-- [EncoderHookHandler](modules.md#encoderhookhandler)
-- [EncoderHooks](modules.md#encoderhooks)
+- [EncoderHook](modules.md#encoderhook)
+- [EncoderHookPath](modules.md#encoderhookpath)
+- [EncoderHookSystem](modules.md#encoderhooksystem)
+- [ExecutableAttr](modules.md#executableattr)
 - [FileAttrs](modules.md#fileattrs)
 - [FileDirLike](modules.md#filedirlike)
 - [FileDirLikes](modules.md#filedirlikes)
+- [FileListV1](modules.md#filelistv1)
 - [FileTreeDirEntry](modules.md#filetreedirentry)
 - [FileTreeDirNode](modules.md#filetreedirnode)
 - [FileTreeEntries](modules.md#filetreeentries)
 - [FileTreeFileEntry](modules.md#filetreefileentry)
-- [FilesList](modules.md#fileslist)
+- [HiddenAttr](modules.md#hiddenattr)
 - [Info](modules.md#info)
+- [InfoHybrid](modules.md#infohybrid)
+- [InfoV1](modules.md#infov1)
 - [MetaInfo](modules.md#metainfo)
+- [MetaVersion](modules.md#metaversion)
 - [OnProgress](modules.md#onprogress)
 - [PackedFileTreeDirEntry](modules.md#packedfiletreedirentry)
 - [PackedFileTreeEntries](modules.md#packedfiletreeentries)
+- [PaddingFileAttr](modules.md#paddingfileattr)
+- [Permutations](modules.md#permutations)
 - [PieceLayers](modules.md#piecelayers)
 - [PopulateOptions](modules.md#populateoptions)
 - [SetProgressTotal](modules.md#setprogresstotal)
+- [SymlinkAttr](modules.md#symlinkattr)
 - [Token](modules.md#token)
 - [TorrentOptions](modules.md#torrentoptions)
 - [TraverseTree](modules.md#traversetree)
@@ -59,6 +102,7 @@
 
 ### Variables
 
+- [BLOCK\_LENGTH](modules.md#block_length)
 - [BUFF\_0](modules.md#buff_0)
 - [BUFF\_COLON](modules.md#buff_colon)
 - [BUFF\_D](modules.md#buff_d)
@@ -73,7 +117,7 @@
 - [BYTE\_I](modules.md#byte_i)
 - [BYTE\_L](modules.md#byte_l)
 - [BYTE\_MINUS](modules.md#byte_minus)
-- [DEFAULT\_BLOCK\_LENGTH](modules.md#default_block_length)
+- [META\_VERSION](modules.md#meta_version)
 
 ### Functions
 
@@ -85,6 +129,7 @@
 - [getEntriesOfDirEntry](modules.md#getentriesofdirentry)
 - [getFileOfFileEntry](modules.md#getfileoffileentry)
 - [getSortedIndex](modules.md#getsortedindex)
+- [getTimeStampSecondsNow](modules.md#gettimestampsecondsnow)
 - [isDigitByte](modules.md#isdigitbyte)
 - [isFile](modules.md#isfile)
 - [isFileSystemDirectoryEntry](modules.md#isfilesystemdirectoryentry)
@@ -110,7 +155,7 @@
 
 ### BByteString
 
-Ƭ **BByteString**<`Strict`\>: `Strict` extends ``true`` ? `BByteStringStrict` : `BByteStringLoose`
+Ƭ **BByteString**<`Strict`\>: `Strict` extends ``true`` ? [`BByteStringStrict`](modules.md#bbytestringstrict) : [`BByteStringLoose`](modules.md#bbytestringloose)
 
 #### Type parameters
 
@@ -120,13 +165,33 @@
 
 #### Defined in
 
-[src/utils/codec.ts:11](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L11)
+[src/utils/codec.ts:11](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L11)
+
+___
+
+### BByteStringLoose
+
+Ƭ **BByteStringLoose**: [`BByteStringStrict`](modules.md#bbytestringstrict) \| `ArrayBuffer`
+
+#### Defined in
+
+[src/utils/codec.ts:10](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L10)
+
+___
+
+### BByteStringStrict
+
+Ƭ **BByteStringStrict**: `string`
+
+#### Defined in
+
+[src/utils/codec.ts:9](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L9)
 
 ___
 
 ### BData
 
-Ƭ **BData**<`Strict`\>: `Strict` extends ``true`` ? `BDataStrict` : `BDataLoose`
+Ƭ **BData**<`Strict`\>: `Strict` extends ``true`` ? [`BDataStrict`](modules.md#bdatastrict) : [`BDataLoose`](modules.md#bdataloose)
 
 #### Type parameters
 
@@ -136,13 +201,33 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:53](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L53)
+[src/utils/codec.ts:53](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L53)
+
+___
+
+### BDataLoose
+
+Ƭ **BDataLoose**: [`BInteger`](modules.md#binteger)<``false``\> \| [`BByteString`](modules.md#bbytestring)<``false``\> \| [`BList`](modules.md#blist)<``false``\> \| [`BDictionary`](modules.md#bdictionary)<``false``\> \| `undefined` \| ``null``
+
+#### Defined in
+
+[src/utils/codec.ts:46](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L46)
+
+___
+
+### BDataStrict
+
+Ƭ **BDataStrict**: [`BInteger`](modules.md#binteger)<``true``\> \| [`BByteString`](modules.md#bbytestring)<``true``\> \| [`BList`](modules.md#blist)<``true``\> \| [`BDictionary`](modules.md#bdictionary)<``true``\>
+
+#### Defined in
+
+[src/utils/codec.ts:41](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L41)
 
 ___
 
 ### BDictionary
 
-Ƭ **BDictionary**<`Strict`\>: `Strict` extends ``true`` ? `BDictionaryStrict` : `BDictionaryLoose`
+Ƭ **BDictionary**<`Strict`\>: `Strict` extends ``true`` ? [`BDictionaryStrict`](modules.md#bdictionarystrict) : [`BDictionaryLoose`](modules.md#bdictionaryloose)
 
 #### Type parameters
 
@@ -152,13 +237,33 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:36](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L36)
+[src/utils/codec.ts:36](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L36)
+
+___
+
+### BDictionaryLoose
+
+Ƭ **BDictionaryLoose**: [`BObject`](modules.md#bobject)<``false``\> \| [`BMap`](modules.md#bmap)
+
+#### Defined in
+
+[src/utils/codec.ts:35](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L35)
+
+___
+
+### BDictionaryStrict
+
+Ƭ **BDictionaryStrict**: [`BObject`](modules.md#bobject)<``true``\>
+
+#### Defined in
+
+[src/utils/codec.ts:34](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L34)
 
 ___
 
 ### BInteger
 
-Ƭ **BInteger**<`Strict`\>: `Strict` extends ``true`` ? `BIntegerStrict` : `BIntegerLoose`
+Ƭ **BInteger**<`Strict`\>: `Strict` extends ``true`` ? [`BIntegerStrict`](modules.md#bintegerstrict) : [`BIntegerLoose`](modules.md#bintegerloose)
 
 #### Type parameters
 
@@ -168,13 +273,33 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:4](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L4)
+[src/utils/codec.ts:4](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L4)
+
+___
+
+### BIntegerLoose
+
+Ƭ **BIntegerLoose**: [`BIntegerStrict`](modules.md#bintegerstrict) \| `boolean`
+
+#### Defined in
+
+[src/utils/codec.ts:3](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L3)
+
+___
+
+### BIntegerStrict
+
+Ƭ **BIntegerStrict**: `number` \| `bigint`
+
+#### Defined in
+
+[src/utils/codec.ts:2](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L2)
 
 ___
 
 ### BList
 
-Ƭ **BList**<`Strict`\>: `Strict` extends ``true`` ? `BListStrict` : `BListLoose`
+Ƭ **BList**<`Strict`\>: `Strict` extends ``true`` ? [`BListStrict`](modules.md#bliststrict) : [`BListLoose`](modules.md#blistloose)
 
 #### Type parameters
 
@@ -184,7 +309,27 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:18](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L18)
+[src/utils/codec.ts:18](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L18)
+
+___
+
+### BListLoose
+
+Ƭ **BListLoose**: [`BData`](modules.md#bdata)<``false``\>[]
+
+#### Defined in
+
+[src/utils/codec.ts:17](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L17)
+
+___
+
+### BListStrict
+
+Ƭ **BListStrict**: [`BData`](modules.md#bdata)<``true``\>[]
+
+#### Defined in
+
+[src/utils/codec.ts:16](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L16)
 
 ___
 
@@ -194,13 +339,13 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:32](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L32)
+[src/utils/codec.ts:32](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L32)
 
 ___
 
 ### BObject
 
-Ƭ **BObject**<`Strict`\>: `Strict` extends ``true`` ? `BObjectStrict` : `BObjectLoose`
+Ƭ **BObject**<`Strict`\>: `Strict` extends ``true`` ? [`BObjectStrict`](interfaces/BObjectStrict.md) : [`BObjectLoose`](interfaces/BObjectLoose.md)
 
 #### Type parameters
 
@@ -210,19 +355,19 @@ ___
 
 #### Defined in
 
-[src/utils/codec.ts:29](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L29)
+[src/utils/codec.ts:29](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L29)
 
 ___
 
-### EncoderHookHandler
+### EncoderHook
 
-Ƭ **EncoderHookHandler**: (`result`: `IteratorResult`<`Uint8Array`, `undefined`\>) => `void`
+Ƭ **EncoderHook**: (`result`: `IteratorResult`<`Uint8Array`, `undefined`\>) => `void`
 
 #### Type declaration
 
 ▸ (`result`): `void`
 
-encode hook handler
+encoder hook
 
 ##### Parameters
 
@@ -236,31 +381,55 @@ encode hook handler
 
 #### Defined in
 
-[src/encode.ts:8](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L8)
+[src/encode.ts:8](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/encode.ts#L8)
 
 ___
 
-### EncoderHooks
+### EncoderHookPath
 
-Ƭ **EncoderHooks**: `TrieMap`<`Iterable`<`string` \| `number`\>, [`EncoderHookHandler`](modules.md#encoderhookhandler)\>
+Ƭ **EncoderHookPath**: `Iterable`<`string` \| `number`\>
 
-encoder hooks
+encoder hook path
 
 #### Defined in
 
-[src/encode.ts:15](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L15)
+[src/encode.ts:15](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/encode.ts#L15)
+
+___
+
+### EncoderHookSystem
+
+Ƭ **EncoderHookSystem**: `TrieMap`<[`EncoderHookPath`](modules.md#encoderhookpath), [`EncoderHook`](modules.md#encoderhook)\>
+
+encoder hook system
+
+#### Defined in
+
+[src/encode.ts:20](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/encode.ts#L20)
+
+___
+
+### ExecutableAttr
+
+Ƭ **ExecutableAttr**: ``"x"``
+
+executable file attribute
+
+#### Defined in
+
+[src/utils/fileTree.ts:26](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L26)
 
 ___
 
 ### FileAttrs
 
-Ƭ **FileAttrs**: `Permutations`<`SymlinkAttr` \| `ExecutableAttr` \| `HiddenAttr` \| `PaddingFileAttr`\>
+Ƭ **FileAttrs**: [`Permutations`](modules.md#permutations)<[`SymlinkAttr`](modules.md#symlinkattr) \| [`ExecutableAttr`](modules.md#executableattr) \| [`HiddenAttr`](modules.md#hiddenattr) \| [`PaddingFileAttr`](modules.md#paddingfileattr)\>
 
 file attributes
 
 #### Defined in
 
-[src/utils/fileTree.ts:48](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L48)
+[src/utils/fileTree.ts:49](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L49)
 
 ___
 
@@ -270,7 +439,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:1](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L1)
+[src/utils/fileDirLike.ts:1](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileDirLike.ts#L1)
 
 ___
 
@@ -280,7 +449,19 @@ ___
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:3](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L3)
+[src/utils/fileDirLike.ts:3](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileDirLike.ts#L3)
+
+___
+
+### FileListV1
+
+Ƭ **FileListV1**: [`FilePropsV1`](interfaces/FilePropsV1.md)[]
+
+v1 file list
+
+#### Defined in
+
+[src/utils/fileTree.ts:109](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L109)
 
 ___
 
@@ -292,7 +473,7 @@ v2 dir entry
 
 #### Defined in
 
-[src/utils/fileTree.ts:136](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L136)
+[src/utils/fileTree.ts:137](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L137)
 
 ___
 
@@ -304,7 +485,7 @@ v2 file tree dir node
 
 #### Defined in
 
-[src/utils/fileTree.ts:131](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L131)
+[src/utils/fileTree.ts:132](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L132)
 
 ___
 
@@ -316,7 +497,7 @@ v2 file or dir entries
 
 #### Defined in
 
-[src/utils/fileTree.ts:146](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L146)
+[src/utils/fileTree.ts:147](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L147)
 
 ___
 
@@ -328,25 +509,25 @@ v2 file entry
 
 #### Defined in
 
-[src/utils/fileTree.ts:126](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L126)
+[src/utils/fileTree.ts:127](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L127)
 
 ___
 
-### FilesList
+### HiddenAttr
 
-Ƭ **FilesList**: [`FilePropsV1`](interfaces/FilePropsV1.md)[]
+Ƭ **HiddenAttr**: ``"h"``
 
-v1 file list
+hidden file attribute
 
 #### Defined in
 
-[src/utils/fileTree.ts:108](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L108)
+[src/utils/fileTree.ts:31](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L31)
 
 ___
 
 ### Info
 
-Ƭ **Info**<`T`\>: `T` extends [`V1`](enums/TorrentType.md#v1) ? `InfoV1` : `T` extends [`V2`](enums/TorrentType.md#v2) ? `InfoV2` : `T` extends [`HYBRID`](enums/TorrentType.md#hybrid) ? `InfoHybrid` : `never`
+Ƭ **Info**<`T`\>: `T` extends [`V1`](enums/TorrentType.md#v1) ? [`InfoV1`](modules.md#infov1) : `T` extends [`V2`](enums/TorrentType.md#v2) ? [`InfoV2`](interfaces/InfoV2.md) : `T` extends [`HYBRID`](enums/TorrentType.md#hybrid) ? [`InfoHybrid`](modules.md#infohybrid) : `never`
 
 info
 
@@ -358,13 +539,37 @@ info
 
 #### Defined in
 
-[src/create.ts:295](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L295)
+[src/create.ts:312](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L312)
+
+___
+
+### InfoHybrid
+
+Ƭ **InfoHybrid**: [`InfoSingleFileHybrid`](interfaces/InfoSingleFileHybrid.md) \| [`InfoMultiFileHybrid`](interfaces/InfoMultiFileHybrid.md)
+
+hybrid info
+
+#### Defined in
+
+[src/create.ts:307](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L307)
+
+___
+
+### InfoV1
+
+Ƭ **InfoV1**: [`InfoSingleFileV1`](interfaces/InfoSingleFileV1.md) \| [`InfoMultiFileV1`](interfaces/InfoMultiFileV1.md)
+
+v1 info
+
+#### Defined in
+
+[src/create.ts:272](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L272)
 
 ___
 
 ### MetaInfo
 
-Ƭ **MetaInfo**<`T`\>: `T` extends [`V1`](enums/TorrentType.md#v1) ? `MetaInfoV1` : `T` extends [`V2`](enums/TorrentType.md#v2) ? `MetaInfoV2` : `T` extends [`HYBRID`](enums/TorrentType.md#hybrid) ? `MetaInfoHybrid` : `never`
+Ƭ **MetaInfo**<`T`\>: `T` extends [`V1`](enums/TorrentType.md#v1) ? [`MetaInfoV1`](interfaces/MetaInfoV1.md) : `T` extends [`V2`](enums/TorrentType.md#v2) ? [`MetaInfoV2`](interfaces/MetaInfoV2.md) : `T` extends [`HYBRID`](enums/TorrentType.md#hybrid) ? [`MetaInfoHybrid`](interfaces/MetaInfoHybrid.md) : `never`
 
 meta info
 
@@ -376,7 +581,19 @@ meta info
 
 #### Defined in
 
-[src/create.ts:376](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L376)
+[src/create.ts:393](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L393)
+
+___
+
+### MetaVersion
+
+Ƭ **MetaVersion**: ``2``
+
+meta version can only be 2 at the time being
+
+#### Defined in
+
+[src/create.ts:38](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L38)
 
 ___
 
@@ -401,7 +618,7 @@ ___
 
 #### Defined in
 
-[src/create.ts:455](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L455)
+[src/create.ts:472](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L472)
 
 ___
 
@@ -413,7 +630,7 @@ v2 packed dir entry
 
 #### Defined in
 
-[src/utils/fileTree.ts:141](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L141)
+[src/utils/fileTree.ts:142](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L142)
 
 ___
 
@@ -425,7 +642,38 @@ v2 packed file or dir entries
 
 #### Defined in
 
-[src/utils/fileTree.ts:151](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L151)
+[src/utils/fileTree.ts:152](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L152)
+
+___
+
+### PaddingFileAttr
+
+Ƭ **PaddingFileAttr**: ``"p"``
+
+padding file attribute
+
+#### Defined in
+
+[src/utils/fileTree.ts:36](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L36)
+
+___
+
+### Permutations
+
+Ƭ **Permutations**<`T`, `U`\>: `T` extends `unknown` ? `T` \| \`${T}${Permutations<Exclude<U, T\>\>}\` : `never`
+
+permutations template
+
+#### Type parameters
+
+| Name | Type |
+| :------ | :------ |
+| `T` | extends `string` |
+| `U` | extends `string` = `T` |
+
+#### Defined in
+
+[src/utils/fileTree.ts:41](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L41)
 
 ___
 
@@ -437,7 +685,7 @@ v2 piece layers
 
 #### Defined in
 
-[src/create.ts:308](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L308)
+[src/create.ts:325](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L325)
 
 ___
 
@@ -447,7 +695,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileTree.ts:184](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L184)
+[src/utils/fileTree.ts:186](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L186)
 
 ___
 
@@ -471,13 +719,25 @@ ___
 
 #### Defined in
 
-[src/create.ts:1024](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L1024)
+[src/create.ts:1045](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L1045)
+
+___
+
+### SymlinkAttr
+
+Ƭ **SymlinkAttr**: ``"s"``
+
+symlink file attribute
+
+#### Defined in
+
+[src/utils/fileTree.ts:21](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L21)
 
 ___
 
 ### Token
 
-Ƭ **Token**<`T`\>: `T` extends [`Integer`](enums/TokenType.md#integer) ? `IntegerToken` : `T` extends [`ByteString`](enums/TokenType.md#bytestring) ? `ByteStringToken` : `T` extends [`ListStart`](enums/TokenType.md#liststart) ? `ListStartToken` : `T` extends [`ListEnd`](enums/TokenType.md#listend) ? `ListEndToken` : `T` extends [`DictionaryStart`](enums/TokenType.md#dictionarystart) ? `DictionaryStartToken` : `T` extends [`DictionaryEnd`](enums/TokenType.md#dictionaryend) ? `DictionaryEndToken` : `never`
+Ƭ **Token**<`T`\>: `T` extends [`Integer`](enums/TokenType.md#integer) ? [`IntegerToken`](interfaces/IntegerToken.md) : `T` extends [`ByteString`](enums/TokenType.md#bytestring) ? [`ByteStringToken`](interfaces/ByteStringToken.md) : `T` extends [`ListStart`](enums/TokenType.md#liststart) ? [`ListStartToken`](interfaces/ListStartToken.md) : `T` extends [`ListEnd`](enums/TokenType.md#listend) ? [`ListEndToken`](interfaces/ListEndToken.md) : `T` extends [`DictionaryStart`](enums/TokenType.md#dictionarystart) ? [`DictionaryStartToken`](interfaces/DictionaryStartToken.md) : `T` extends [`DictionaryEnd`](enums/TokenType.md#dictionaryend) ? [`DictionaryEndToken`](interfaces/DictionaryEndToken.md) : `never`
 
 #### Type parameters
 
@@ -487,13 +747,13 @@ ___
 
 #### Defined in
 
-[src/transformers/tokenizer.ts:47](https://github.com/Sec-ant/bepjs/blob/9590005/src/transformers/tokenizer.ts#L47)
+[src/transformers/tokenizer.ts:47](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/transformers/tokenizer.ts#L47)
 
 ___
 
 ### TorrentOptions
 
-Ƭ **TorrentOptions**<`T`\>: `T` extends [`V1`](enums/TorrentType.md#v1) ? `TorrentOptionsV1` : `T` extends [`V2`](enums/TorrentType.md#v2) ? `TorrentOptionsV2` : `T` extends [`HYBRID`](enums/TorrentType.md#hybrid) ? `TorrentOptionsHybrid` : `never`
+Ƭ **TorrentOptions**<`T`\>: `T` extends [`V1`](enums/TorrentType.md#v1) ? [`TorrentOptionsV1`](interfaces/TorrentOptionsV1.md) : `T` extends [`V2`](enums/TorrentType.md#v2) ? [`TorrentOptionsV2`](interfaces/TorrentOptionsV2.md) : `T` extends [`HYBRID`](enums/TorrentType.md#hybrid) ? [`TorrentOptionsHybrid`](interfaces/TorrentOptionsHybrid.md) : `never`
 
 torrent options
 
@@ -505,7 +765,7 @@ torrent options
 
 #### Defined in
 
-[src/create.ts:161](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L161)
+[src/create.ts:171](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L171)
 
 ___
 
@@ -529,7 +789,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileTree.ts:199](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L199)
+[src/utils/fileTree.ts:201](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L201)
 
 ___
 
@@ -547,9 +807,21 @@ ___
 
 #### Defined in
 
-[src/create.ts:1030](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L1030)
+[src/create.ts:1051](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L1051)
 
 ## Variables
+
+### BLOCK\_LENGTH
+
+• `Const` **BLOCK\_LENGTH**: `number`
+
+default block length 1 << 14 = 16384
+
+#### Defined in
+
+[src/create.ts:424](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L424)
+
+___
 
 ### BUFF\_0
 
@@ -559,7 +831,7 @@ bencode buff: 0 (stands for 0)
 
 #### Defined in
 
-[src/utils/codec.ts:125](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L125)
+[src/utils/codec.ts:125](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L125)
 
 ___
 
@@ -571,7 +843,7 @@ bencode buff: : (stands for byte string length end)
 
 #### Defined in
 
-[src/utils/codec.ts:105](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L105)
+[src/utils/codec.ts:105](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L105)
 
 ___
 
@@ -583,7 +855,7 @@ bencode buff: d (stands for dictionary start)
 
 #### Defined in
 
-[src/utils/codec.ts:75](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L75)
+[src/utils/codec.ts:75](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L75)
 
 ___
 
@@ -595,7 +867,7 @@ bencode buff: e (stands for end)
 
 #### Defined in
 
-[src/utils/codec.ts:85](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L85)
+[src/utils/codec.ts:85](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L85)
 
 ___
 
@@ -607,7 +879,7 @@ bencode buff: i (stands for integer start)
 
 #### Defined in
 
-[src/utils/codec.ts:95](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L95)
+[src/utils/codec.ts:95](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L95)
 
 ___
 
@@ -619,7 +891,7 @@ bencode buff: l (stands for list start)
 
 #### Defined in
 
-[src/utils/codec.ts:65](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L65)
+[src/utils/codec.ts:65](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L65)
 
 ___
 
@@ -631,7 +903,7 @@ bencode buff: - (stands for -)
 
 #### Defined in
 
-[src/utils/codec.ts:115](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L115)
+[src/utils/codec.ts:115](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L115)
 
 ___
 
@@ -643,7 +915,7 @@ bencode byte: 0 (stands for 0)
 
 #### Defined in
 
-[src/utils/codec.ts:120](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L120)
+[src/utils/codec.ts:120](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L120)
 
 ___
 
@@ -655,7 +927,7 @@ bencode byte: : (stands for byte string length end)
 
 #### Defined in
 
-[src/utils/codec.ts:100](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L100)
+[src/utils/codec.ts:100](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L100)
 
 ___
 
@@ -667,7 +939,7 @@ bencode byte: d (stands for dictionary start)
 
 #### Defined in
 
-[src/utils/codec.ts:70](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L70)
+[src/utils/codec.ts:70](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L70)
 
 ___
 
@@ -679,7 +951,7 @@ bencode byte: e (stands for end)
 
 #### Defined in
 
-[src/utils/codec.ts:80](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L80)
+[src/utils/codec.ts:80](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L80)
 
 ___
 
@@ -691,7 +963,7 @@ bencode byte: i (stands for integer start)
 
 #### Defined in
 
-[src/utils/codec.ts:90](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L90)
+[src/utils/codec.ts:90](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L90)
 
 ___
 
@@ -703,7 +975,7 @@ bencode byte: l (stands for list start)
 
 #### Defined in
 
-[src/utils/codec.ts:60](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L60)
+[src/utils/codec.ts:60](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L60)
 
 ___
 
@@ -715,19 +987,19 @@ bencode byte: - (stands for -)
 
 #### Defined in
 
-[src/utils/codec.ts:110](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L110)
+[src/utils/codec.ts:110](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L110)
 
 ___
 
-### DEFAULT\_BLOCK\_LENGTH
+### META\_VERSION
 
-• `Const` **DEFAULT\_BLOCK\_LENGTH**: `number`
+• `Const` **META\_VERSION**: [`MetaVersion`](modules.md#metaversion) = `2`
 
-default block length 1 << 14 = 16384
+default meta version = 2
 
 #### Defined in
 
-[src/create.ts:388](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L388)
+[src/create.ts:429](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L429)
 
 ## Functions
 
@@ -748,7 +1020,7 @@ default block length 1 << 14 = 16384
 
 #### Defined in
 
-[src/utils/fileTree.ts:506](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L506)
+[src/utils/fileTree.ts:508](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L508)
 
 ___
 
@@ -770,29 +1042,29 @@ concat uint8 arrays
 
 #### Defined in
 
-[src/utils/misc.ts:61](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/misc.ts#L61)
+[src/utils/misc.ts:61](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/misc.ts#L61)
 
 ___
 
 ### create
 
-▸ **create**(`fileDirLikes`, `opts?`, `onProgress?`): `Promise`<`undefined` \| `MetaInfoV1` \| `MetaInfoV2`\>
+▸ **create**(`fileDirLikes`, `opts?`, `onProgress?`): `Promise`<`undefined` \| [`MetaInfoV1`](interfaces/MetaInfoV1.md) \| [`MetaInfoV2`](interfaces/MetaInfoV2.md)\>
 
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
 | `fileDirLikes` | [`FileDirLikes`](modules.md#filedirlikes) |
-| `opts` | `TorrentOptionsV1` \| `TorrentOptionsV2` \| `TorrentOptionsHybrid` |
+| `opts` | [`TorrentOptionsV1`](interfaces/TorrentOptionsV1.md) \| [`TorrentOptionsV2`](interfaces/TorrentOptionsV2.md) \| [`TorrentOptionsHybrid`](interfaces/TorrentOptionsHybrid.md) |
 | `onProgress?` | [`OnProgress`](modules.md#onprogress) |
 
 #### Returns
 
-`Promise`<`undefined` \| `MetaInfoV1` \| `MetaInfoV2`\>
+`Promise`<`undefined` \| [`MetaInfoV1`](interfaces/MetaInfoV1.md) \| [`MetaInfoV2`](interfaces/MetaInfoV2.md)\>
 
 #### Defined in
 
-[src/create.ts:885](https://github.com/Sec-ant/bepjs/blob/9590005/src/create.ts#L885)
+[src/create.ts:906](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/create.ts#L906)
 
 ___
 
@@ -812,22 +1084,22 @@ ___
 
 #### Defined in
 
-[src/decode.ts:130](https://github.com/Sec-ant/bepjs/blob/9590005/src/decode.ts#L130)
+[src/decode.ts:130](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/decode.ts#L130)
 
 ___
 
 ### encode
 
-▸ **encode**(`data`, `hooks?`): `ReadableStream`<`Uint8Array`\>
+▸ **encode**(`data`, `hookSystem?`): `ReadableStream`<`Uint8Array`\>
 
-BEncode
+Bencode
 
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
-| `data` | `BDataLoose` |
-| `hooks?` | [`EncoderHooks`](modules.md#encoderhooks) |
+| `data` | [`BDataLoose`](modules.md#bdataloose) |
+| `hookSystem?` | [`EncoderHookSystem`](modules.md#encoderhooksystem) |
 
 #### Returns
 
@@ -837,7 +1109,7 @@ readable stream of the bencoded data
 
 #### Defined in
 
-[src/encode.ts:195](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L195)
+[src/encode.ts:203](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/encode.ts#L203)
 
 ___
 
@@ -857,7 +1129,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:69](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L69)
+[src/utils/fileDirLike.ts:69](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileDirLike.ts#L69)
 
 ___
 
@@ -877,7 +1149,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:82](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L82)
+[src/utils/fileDirLike.ts:82](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileDirLike.ts#L82)
 
 ___
 
@@ -916,7 +1188,25 @@ index of the value in the sorted array and indexed result if found
 
 #### Defined in
 
-[src/utils/misc.ts:9](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/misc.ts#L9)
+[src/utils/misc.ts:9](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/misc.ts#L9)
+
+___
+
+### getTimeStampSecondsNow
+
+▸ **getTimeStampSecondsNow**(): `number`
+
+Get time stamp seconds now
+
+#### Returns
+
+`number`
+
+time stamp now in seconds
+
+#### Defined in
+
+[src/utils/misc.ts:88](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/misc.ts#L88)
 
 ___
 
@@ -938,7 +1228,7 @@ is byte digit
 
 #### Defined in
 
-[src/utils/codec.ts:132](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/codec.ts#L132)
+[src/utils/codec.ts:132](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/codec.ts#L132)
 
 ___
 
@@ -958,7 +1248,7 @@ fileDirLike is File
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:5](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L5)
+[src/utils/fileDirLike.ts:5](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileDirLike.ts#L5)
 
 ___
 
@@ -978,7 +1268,7 @@ fileDirLike is FileSystemDirectoryEntry
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:9](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L9)
+[src/utils/fileDirLike.ts:9](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileDirLike.ts#L9)
 
 ___
 
@@ -998,7 +1288,7 @@ fileDirLike is FileSystemDirectoryHandle
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:29](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L29)
+[src/utils/fileDirLike.ts:29](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileDirLike.ts#L29)
 
 ___
 
@@ -1018,7 +1308,7 @@ fileDirLike is FileSystemFileEntry
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:19](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L19)
+[src/utils/fileDirLike.ts:19](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileDirLike.ts#L19)
 
 ___
 
@@ -1038,7 +1328,7 @@ fileDirLike is FileSystemFileHandle
 
 #### Defined in
 
-[src/utils/fileDirLike.ts:45](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileDirLike.ts#L45)
+[src/utils/fileDirLike.ts:45](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileDirLike.ts#L45)
 
 ___
 
@@ -1058,7 +1348,7 @@ entry is FileTreeDirEntry
 
 #### Defined in
 
-[src/utils/fileTree.ts:499](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L499)
+[src/utils/fileTree.ts:501](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L501)
 
 ___
 
@@ -1078,7 +1368,7 @@ node is FileTreeDirNode
 
 #### Defined in
 
-[src/utils/fileTree.ts:487](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L487)
+[src/utils/fileTree.ts:489](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L489)
 
 ___
 
@@ -1098,7 +1388,7 @@ entry is FileTreeFileEntry
 
 #### Defined in
 
-[src/utils/fileTree.ts:493](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L493)
+[src/utils/fileTree.ts:495](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L495)
 
 ___
 
@@ -1118,7 +1408,7 @@ node is FileTreeFileNode
 
 #### Defined in
 
-[src/utils/fileTree.ts:481](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L481)
+[src/utils/fileTree.ts:483](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L483)
 
 ___
 
@@ -1149,7 +1439,7 @@ sorted array
 
 #### Defined in
 
-[src/utils/misc.ts:44](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/misc.ts#L44)
+[src/utils/misc.ts:44](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/misc.ts#L44)
 
 ___
 
@@ -1174,7 +1464,7 @@ root hash
 
 #### Defined in
 
-[src/utils/misc.ts:90](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/misc.ts#L90)
+[src/utils/misc.ts:98](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/misc.ts#L98)
 
 ___
 
@@ -1198,7 +1488,7 @@ next nearest power of 2
 
 #### Defined in
 
-[src/utils/misc.ts:80](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/misc.ts#L80)
+[src/utils/misc.ts:80](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/misc.ts#L80)
 
 ___
 
@@ -1219,7 +1509,7 @@ ___
 
 #### Defined in
 
-[src/utils/fileTree.ts:456](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L456)
+[src/utils/fileTree.ts:458](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L458)
 
 ___
 
@@ -1231,7 +1521,7 @@ ___
 
 | Name | Type |
 | :------ | :------ |
-| `tokenReadableStream` | `ReadableStream`<`IntegerToken` \| `ByteStringToken` \| `ListStartToken` \| `ListEndToken` \| `DictionaryStartToken` \| `DictionaryEndToken`\> |
+| `tokenReadableStream` | `ReadableStream`<[`IntegerToken`](interfaces/IntegerToken.md) \| [`ByteStringToken`](interfaces/ByteStringToken.md) \| [`ListStartToken`](interfaces/ListStartToken.md) \| [`ListEndToken`](interfaces/ListEndToken.md) \| [`DictionaryStartToken`](interfaces/DictionaryStartToken.md) \| [`DictionaryEndToken`](interfaces/DictionaryEndToken.md)\> |
 
 #### Returns
 
@@ -1239,7 +1529,7 @@ ___
 
 #### Defined in
 
-[src/decode.ts:11](https://github.com/Sec-ant/bepjs/blob/9590005/src/decode.ts#L11)
+[src/decode.ts:11](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/decode.ts#L11)
 
 ___
 
@@ -1264,7 +1554,7 @@ file tree and a traverse function
 
 #### Defined in
 
-[src/utils/fileTree.ts:209](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L209)
+[src/utils/fileTree.ts:211](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L211)
 
 ___
 
@@ -1290,79 +1580,79 @@ ___
 
 #### Defined in
 
-[src/utils/fileTree.ts:156](https://github.com/Sec-ant/bepjs/blob/9590005/src/utils/fileTree.ts#L156)
+[src/utils/fileTree.ts:157](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/utils/fileTree.ts#L157)
 
 ___
 
 ### useArrayBufferPromiseHook
 
-▸ **useArrayBufferPromiseHook**(`path`, `hooks`): [`Promise`<`ArrayBuffer`\>]
+▸ **useArrayBufferPromiseHook**(`path`, `hookSystem`): `Promise`<`ArrayBuffer`\>
 
-Get an array buffer promise hook handler
+Register a hook and consume the result as an array buffer promise
 
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
-| `path` | `Iterable`<`string`\> |
-| `hooks` | [`EncoderHooks`](modules.md#encoderhooks) |
+| `path` | [`EncoderHookPath`](modules.md#encoderhookpath) |
+| `hookSystem` | [`EncoderHookSystem`](modules.md#encoderhooksystem) |
 
 #### Returns
 
-[`Promise`<`ArrayBuffer`\>]
+`Promise`<`ArrayBuffer`\>
 
-an array buffer
+an array buffer promise
 
 #### Defined in
 
-[src/encode.ts:277](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L277)
+[src/encode.ts:287](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/encode.ts#L287)
 
 ___
 
 ### useTextPromiseHook
 
-▸ **useTextPromiseHook**(`path`, `hooks`): [`Promise`<`string`\>]
+▸ **useTextPromiseHook**(`path`, `hookSystem`): `Promise`<`string`\>
 
-Get an text promise hook handler
+Register a hook and consume the result as a text promise
 
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
-| `path` | `Iterable`<`string`\> |
-| `hooks` | [`EncoderHooks`](modules.md#encoderhooks) |
+| `path` | [`EncoderHookPath`](modules.md#encoderhookpath) |
+| `hookSystem` | [`EncoderHookSystem`](modules.md#encoderhooksystem) |
 
 #### Returns
 
-[`Promise`<`string`\>]
+`Promise`<`string`\>
 
-an text promise
+a text promise
 
 #### Defined in
 
-[src/encode.ts:290](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L290)
+[src/encode.ts:302](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/encode.ts#L302)
 
 ___
 
 ### useUint8ArrayStreamHook
 
-▸ **useUint8ArrayStreamHook**(`path`, `hooks`): [`ReadableStream`<`Uint8Array`\>]
+▸ **useUint8ArrayStreamHook**(`path`, `hookSystem`): `ReadableStream`<`Uint8Array`\>
 
-Get a uint8 array stream hook handler
+Register a hook and consume the result as an uint8 array readable stream
 
 #### Parameters
 
 | Name | Type |
 | :------ | :------ |
-| `path` | `Iterable`<`string`\> |
-| `hooks` | [`EncoderHooks`](modules.md#encoderhooks) |
+| `path` | [`EncoderHookPath`](modules.md#encoderhookpath) |
+| `hookSystem` | [`EncoderHookSystem`](modules.md#encoderhooksystem) |
 
 #### Returns
 
-[`ReadableStream`<`Uint8Array`\>]
+`ReadableStream`<`Uint8Array`\>
 
-a uint8 array readable stream
+an uint8 array readable stream
 
 #### Defined in
 
-[src/encode.ts:232](https://github.com/Sec-ant/bepjs/blob/9590005/src/encode.ts#L232)
+[src/encode.ts:242](https://github.com/Sec-ant/bepjs/blob/f9eb2df/src/encode.ts#L242)
