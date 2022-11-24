@@ -1,6 +1,6 @@
 {
   "name": "torrefy",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "An ESM package that uses Web Streams API to create v1, v2 or hybrid torrents in your web browser.",
   "type": "module",
   "main": "./dist/index.js",
