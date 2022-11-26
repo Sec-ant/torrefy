@@ -1,5 +1,5 @@
+import { fromIterable } from "@sec-ant/readable-stream";
 import { concatenate as concatenateStreams } from "workbox-streams";
-
 import { BlockHasher } from "./transformers/blockHasher.js";
 import { ChunkSplitter } from "./transformers/chunkSplitter.js";
 import { MerkleRootCalculator } from "./transformers/merkleRootCalculator.js";
