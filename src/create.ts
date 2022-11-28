@@ -40,26 +40,7 @@ export type MetaVersion = 2;
 /**
  * torrent type: v1, v2, hybrid
  */
-export enum TorrentType {
-  /**
-   * v1 torrent
-   *
-   * [BEP 3](https://www.bittorrent.org/beps/bep_0003.html)
-   */
-  V1 = "v1",
-  /**
-   * v2 torrent
-   *
-   * [BEP 52](https://www.bittorrent.org/beps/bep_0052.html)
-   */
-  V2 = "v2",
-  /**
-   * v1 + v2 hybrid torrent
-   *
-   * [BEP 52](https://www.bittorrent.org/beps/bep_0052.html#upgrade-path)
-   */
-  HYBRID = "hybrid",
-}
+export type TorrentType = "v1" | "v2" | "hybrid";
 
 /**
  * base torrent options
@@ -113,6 +94,7 @@ export interface TorrentOptionsBase {
    * [BEP 9](http://www.bittorrent.org/beps/bep_0019.html#metadata-extension)
    */
   urlList?: string[];
+  type: TorrentType;
 }
 
 /**
@@ -134,7 +116,7 @@ export interface TorrentOptionsV1 extends TorrentOptionsBase {
   /**
    * torrent type: V1
    */
-  type: TorrentType.V1;
+  type: "v1";
 }
 
 /**
@@ -148,7 +130,7 @@ export interface TorrentOptionsV2 extends TorrentOptionsBase {
   /**
    * torrent type: V2
    */
-  type: TorrentType.V2;
+  type: "v2";
 }
 
 /**
@@ -162,20 +144,19 @@ export interface TorrentOptionsHybrid extends TorrentOptionsBase {
   /**
    * torrent type: HYBRID
    */
-  type: TorrentType.HYBRID;
+  type: "hybrid";
 }
 
 /**
  * torrent options
  */
-export type TorrentOptions<T extends TorrentType = TorrentType> =
-  T extends TorrentType.V1
-    ? TorrentOptionsV1
-    : T extends TorrentType.V2
-    ? TorrentOptionsV2
-    : T extends TorrentType.HYBRID
-    ? TorrentOptionsHybrid
-    : never;
+export type TorrentOptions<T extends TorrentType = TorrentType> = T extends "v1"
+  ? TorrentOptionsV1
+  : T extends "v2"
+  ? TorrentOptionsV2
+  : T extends "hybrid"
+  ? TorrentOptionsHybrid
+  : never;
 
 type UnrequiredOptions =
   | "announce"
@@ -198,11 +179,11 @@ type InternalTorrentOptionsHybrid = TorrentOptionsHybrid &
  * internal torrent options
  */
 type InternalTorrentOptions<T extends TorrentType = TorrentType> =
-  T extends TorrentType.V1
+  T extends "v1"
     ? InternalTorrentOptionsV1
-    : T extends TorrentType.V2
+    : T extends "v2"
     ? InternalTorrentOptionsV2
-    : T extends TorrentType.HYBRID
+    : T extends "hybrid"
     ? InternalTorrentOptionsHybrid
     : never;
 
@@ -309,11 +290,11 @@ export type InfoHybrid = InfoSingleFileHybrid | InfoMultiFileHybrid;
 /**
  * info
  */
-export type Info<T extends TorrentType = TorrentType> = T extends TorrentType.V1
+export type Info<T extends TorrentType = TorrentType> = T extends "v1"
   ? InfoV1
-  : T extends TorrentType.V2
+  : T extends "v2"
   ? InfoV2
-  : T extends TorrentType.HYBRID
+  : T extends "hybrid"
   ? InfoHybrid
   : never;
 
@@ -368,14 +349,14 @@ export interface MetaInfoBase extends BObject<false> {
  * v1 meta info
  */
 export interface MetaInfoV1 extends MetaInfoBase {
-  info: Info<TorrentType.V1>;
+  info: Info<"v1">;
 }
 
 /**
  * v2 meta info
  */
 export interface MetaInfoV2 extends MetaInfoBase {
-  info: Info<TorrentType.V2>;
+  info: Info<"v2">;
   ["piece layers"]?: PieceLayers;
 }
 
@@ -383,40 +364,39 @@ export interface MetaInfoV2 extends MetaInfoBase {
  * hybrid meta info
  */
 export interface MetaInfoHybrid extends MetaInfoBase {
-  info: Info<TorrentType.HYBRID>;
+  info: Info<"hybrid">;
   ["piece layers"]?: PieceLayers;
 }
 
 /**
  * meta info
  */
-export type MetaInfo<T extends TorrentType = TorrentType> =
-  T extends TorrentType.V1
-    ? MetaInfoV1
-    : T extends TorrentType.V2
-    ? MetaInfoV2
-    : T extends TorrentType.HYBRID
-    ? MetaInfoHybrid
-    : never;
+export type MetaInfo<T extends TorrentType = TorrentType> = T extends "v1"
+  ? MetaInfoV1
+  : T extends "v2"
+  ? MetaInfoV2
+  : T extends "hybrid"
+  ? MetaInfoHybrid
+  : never;
 
 /**
  * common piece lengths
  */
 
-export enum CommonPieceLength {
-  "16KB" = 1 << 14,
-  "32KB" = 1 << 15,
-  "64KB" = 1 << 16,
-  "128KB" = 1 << 17,
-  "256KB" = 1 << 18,
-  "512KB" = 1 << 19,
-  "1MB" = 1 << 20,
-  "2MB" = 1 << 21,
-  "4MB" = 1 << 22,
-  "8MB" = 1 << 23,
-  "16MB" = 1 << 24,
-  "32MB" = 1 << 25,
-}
+export const PIECE_LENGTH = {
+  "16KB": 1 << 14,
+  "32KB": 1 << 15,
+  "64KB": 1 << 16,
+  "128KB": 1 << 17,
+  "256KB": 1 << 18,
+  "512KB": 1 << 19,
+  "1MB": 1 << 20,
+  "2MB": 1 << 21,
+  "4MB": 1 << 22,
+  "8MB": 1 << 23,
+  "16MB": 1 << 24,
+  "32MB": 1 << 25,
+};
 
 /**
  * default block length 1 << 14 = 16384
@@ -431,8 +411,8 @@ export const META_VERSION: MetaVersion = 2;
 /**
  * default v1 torrent options
  */
-const defaultTorrentOptionsV1: InternalTorrentOptions<TorrentType.V1> = {
-  type: TorrentType.V1,
+const defaultTorrentOptionsV1: InternalTorrentOptions<"v1"> = {
+  type: "v1",
   addCreatedBy: true,
   addCreationDate: true,
   addPaddingFiles: false,
@@ -445,8 +425,8 @@ const defaultTorrentOptionsV1: InternalTorrentOptions<TorrentType.V1> = {
 /**
  * default v2 torrent options
  */
-const defaultTorrentOptionsV2: InternalTorrentOptions<TorrentType.V2> = {
-  type: TorrentType.V2,
+const defaultTorrentOptionsV2: InternalTorrentOptions<"v2"> = {
+  type: "v2",
   addCreatedBy: true,
   addCreationDate: true,
   blockLength: BLOCK_LENGTH,
@@ -458,16 +438,15 @@ const defaultTorrentOptionsV2: InternalTorrentOptions<TorrentType.V2> = {
 /**
  * default hybrid torrent options
  */
-const defaultTorrentOptionsHybrid: InternalTorrentOptions<TorrentType.HYBRID> =
-  {
-    type: TorrentType.HYBRID,
-    addCreatedBy: true,
-    addCreationDate: true,
-    blockLength: BLOCK_LENGTH,
-    pieceLength: NaN,
-    metaVersion: META_VERSION,
-    isPrivate: false,
-  };
+const defaultTorrentOptionsHybrid: InternalTorrentOptions<"hybrid"> = {
+  type: "hybrid",
+  addCreatedBy: true,
+  addCreationDate: true,
+  blockLength: BLOCK_LENGTH,
+  pieceLength: NaN,
+  metaVersion: META_VERSION,
+  isPrivate: false,
+};
 
 export type OnProgress = (
   current: number,
@@ -484,11 +463,11 @@ function getTotalPieces(iterableFiles: Iterable<File>, pieceLength: number) {
 
 async function createV1(
   fileDirLikes: FileDirLikes,
-  opts: TorrentOptions<TorrentType.V1>,
+  opts: TorrentOptions<"v1">,
   onProgress?: OnProgress
 ) {
   // assign options
-  const iOpts: InternalTorrentOptions<TorrentType.V1> = {
+  const iOpts: InternalTorrentOptions<"v1"> = {
     ...defaultTorrentOptionsV1,
     ...opts,
   };
@@ -588,7 +567,7 @@ async function createV1(
     );
   }
 
-  const metaInfo: MetaInfo<TorrentType.V1> = {
+  const metaInfo: MetaInfo<"v1"> = {
     ...(typeof iOpts.announce === "undefined"
       ? {}
       : { announce: iOpts.announce }),
@@ -635,11 +614,11 @@ async function createV1(
 
 async function createV2(
   fileDirLikes: FileDirLikes,
-  opts: TorrentOptions<TorrentType.V2>,
+  opts: TorrentOptions<"v2">,
   onProgress?: OnProgress
 ) {
   // assign options
-  const iOpts: InternalTorrentOptions<TorrentType.V2> = {
+  const iOpts: InternalTorrentOptions<"v2"> = {
     ...defaultTorrentOptionsV2,
     ...opts,
   };
@@ -713,7 +692,7 @@ async function createV2(
     })
   );
 
-  const metaInfo: MetaInfo<TorrentType.V2> = {
+  const metaInfo: MetaInfo<"v2"> = {
     ...(typeof iOpts.announce === "undefined"
       ? {}
       : { announce: iOpts.announce }),
@@ -742,11 +721,11 @@ async function createV2(
 
 async function createHybrid(
   fileDirLikes: FileDirLikes,
-  opts: TorrentOptions<TorrentType.HYBRID>,
+  opts: TorrentOptions<"hybrid">,
   onProgress?: OnProgress
 ) {
   // assign options
-  const iOpts: InternalTorrentOptions<TorrentType.HYBRID> = {
+  const iOpts: InternalTorrentOptions<"hybrid"> = {
     ...defaultTorrentOptionsHybrid,
     ...opts,
   };
@@ -848,7 +827,7 @@ async function createHybrid(
   }
   const v1PiecesAsyncIterable = concatenator(pieceLayerAsyncIterables);
 
-  const metaInfo: MetaInfo<TorrentType.HYBRID> = {
+  const metaInfo: MetaInfo<"hybrid"> = {
     ...(typeof iOpts.announce === "undefined"
       ? {}
       : { announce: iOpts.announce }),
@@ -901,15 +880,15 @@ async function createHybrid(
 
 export async function create(
   fileDirLikes: FileDirLikes,
-  opts: TorrentOptions = { type: TorrentType.V1 },
+  opts: TorrentOptions = { type: "v1" },
   onProgress?: OnProgress
 ) {
   switch (opts.type) {
-    case TorrentType.V1:
+    case "v1":
       return await createV1(fileDirLikes, opts, onProgress);
-    case TorrentType.V2:
+    case "v2":
       return await createV2(fileDirLikes, opts, onProgress);
-    case TorrentType.HYBRID:
+    case "hybrid":
       return await createHybrid(fileDirLikes, opts, onProgress);
   }
 }
