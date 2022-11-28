@@ -1,6 +1,6 @@
 export interface ChunkRegulatorOptions {
   outputLength: number;
-  padding: boolean;
+  padding?: boolean;
 }
 
 export async function* chunkRegulator(

@@ -6,21 +6,15 @@ import {
   BYTE_MINUS,
   isDigitByte,
 } from "./utils/codec.js";
-import { Token, TokenType, Tokenizer } from "./transformers/tokenizer.js";
+import { tokenizer, Token } from "./asyncGenerators/tokenizer.js";
 
 export async function parse(
-  tokenReadableStream: ReadableStream<Token>
+  tokenAsyncIterable: AsyncIterable<Token>
 ): Promise<BData | undefined> {
   let parsedResult: BData | undefined;
   const contextStack: (BObject | BList)[] = [];
-  const tokenStreamReader = tokenReadableStream.getReader();
   let dictionaryKey: string | undefined;
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { done, value: token } = await tokenStreamReader.read();
-    if (done) {
-      break;
-    }
+  for await (const token of tokenAsyncIterable) {
     const currentContext = contextStack.at(-1);
     // current context: global
     if (!currentContext) {
@@ -28,19 +22,19 @@ export async function parse(
         throw new SyntaxError(`Unexpected token: ${JSON.stringify(token)}`);
       }
       switch (token.type) {
-        case TokenType.Integer:
+        case "Integer":
           parsedResult = parseInteger(token.value);
           break;
-        case TokenType.ByteString:
+        case "ByteString":
           parsedResult = parseByteString(token.value);
           break;
-        case TokenType.DictionaryStart: {
+        case "DictionaryStart": {
           const nextContext = Object.create(null) as BObject;
           contextStack.push(nextContext);
           parsedResult = nextContext;
           break;
         }
-        case TokenType.ListStart: {
+        case "ListStart": {
           const nextContext: BList = [];
           contextStack.push(nextContext);
           parsedResult = nextContext;
@@ -53,25 +47,25 @@ export async function parse(
     // current context: list
     else if (Array.isArray(currentContext)) {
       switch (token.type) {
-        case TokenType.Integer:
+        case "Integer":
           currentContext.push(parseInteger(token.value));
           break;
-        case TokenType.ByteString:
+        case "ByteString":
           currentContext.push(parseByteString(token.value));
           break;
-        case TokenType.DictionaryStart: {
+        case "DictionaryStart": {
           const nextContext = Object.create(null) as BObject;
           currentContext.push(nextContext);
           contextStack.push(nextContext);
           break;
         }
-        case TokenType.ListStart: {
+        case "ListStart": {
           const nextContext: BList = [];
           currentContext.push(nextContext);
           contextStack.push(nextContext);
           break;
         }
-        case TokenType.ListEnd:
+        case "ListEnd":
           contextStack.pop();
           break;
         default:
@@ -83,10 +77,10 @@ export async function parse(
       // dictionary key
       if (typeof dictionaryKey === "undefined") {
         switch (token.type) {
-          case TokenType.ByteString:
+          case "ByteString":
             dictionaryKey = parseByteString(token.value);
             break;
-          case TokenType.DictionaryEnd:
+          case "DictionaryEnd":
             contextStack.pop();
             break;
           default:
@@ -96,19 +90,19 @@ export async function parse(
       // dictionary value
       else {
         switch (token.type) {
-          case TokenType.Integer:
+          case "Integer":
             currentContext[dictionaryKey] = parseInteger(token.value);
             break;
-          case TokenType.ByteString:
+          case "ByteString":
             currentContext[dictionaryKey] = parseByteString(token.value);
             break;
-          case TokenType.DictionaryStart: {
+          case "DictionaryStart": {
             const nextContext = Object.create(null) as BObject;
             currentContext[dictionaryKey] = nextContext;
             contextStack.push(nextContext);
             break;
           }
-          case TokenType.ListStart: {
+          case "ListStart": {
             const nextContext: BList = [];
             currentContext[dictionaryKey] = nextContext;
             contextStack.push(nextContext);
@@ -128,11 +122,9 @@ export async function parse(
 }
 
 export async function decode(
-  torrentReadableStream: ReadableStream<Uint8Array>
+  torrentAsyncIterable: AsyncIterable<Uint8Array>
 ): Promise<BData | undefined> {
-  const tokenizer = new Tokenizer();
-  const tokenReadableStream = torrentReadableStream.pipeThrough(tokenizer);
-  return await parse(tokenReadableStream);
+  return await parse(tokenizer(torrentAsyncIterable));
 }
 
 function parseInteger(tokenValue: Uint8Array) {

@@ -1,10 +1,10 @@
 import { fromIterable } from "@sec-ant/readable-stream";
-import { concatenate as concatenateStreams } from "workbox-streams";
-import { BlockHasher } from "./transformers/blockHasher.js";
-import { ChunkSplitter } from "./transformers/chunkSplitter.js";
-import { MerkleRootCalculator } from "./transformers/merkleRootCalculator.js";
-import { MerkleTreeBalancer } from "./transformers/merkleTreeBalancer.js";
-import { PieceHasher } from "./transformers/pieceHasher.js";
+import { chunkRegulator } from "./asyncGenerators/chunkRegulator.js";
+import { chunkHasher } from "./asyncGenerators/chunkHasher.js";
+import { chunkPacker } from "./asyncGenerators/chunkPacker.js";
+import { chunkGrouper } from "./asyncGenerators/chunkGrouper.js";
+import { concatenator } from "./asyncGenerators/concatenator.js";
+import { merkleRootCalculator } from "./asyncGenerators/merkleRootCalculator.js";
 import { BObject } from "./utils/codec.js";
 import {
   FileAttrs,
@@ -536,27 +536,23 @@ async function createV1(
   );
   iOpts.name = name;
   // declare v1 piece readable stream
-  let v1PiecesReadableStream: ReadableStream<Uint8Array>;
+  let v1PiecesAsyncIterable: AsyncIterable<Uint8Array>;
   // add padding files
   if (iOpts.addPaddingFiles) {
     // assign progress total (in piece unit)
     const totalPieces = getTotalPieces(files, iOpts.pieceLength);
     await setProgressTotal(totalPieces);
 
-    const pieceLayerReadableStreamPromises: Promise<
-      ReadableStream<Uint8Array>
-    >[] = [];
+    const pieceLayerAsyncIterables: AsyncIterable<Uint8Array>[] = [];
     const lastFileIndex = totalFileCount - 1;
     for (let fileIndex = lastFileIndex; fileIndex >= 0; --fileIndex) {
       const file = files[fileIndex] as File;
-      pieceLayerReadableStreamPromises.unshift(
-        Promise.resolve(
-          getPieceLayerReadableStream(file.stream(), {
-            pieceLength: iOpts.pieceLength,
-            padding: fileIndex !== lastFileIndex,
-            updateProgress,
-          })
-        )
+      pieceLayerAsyncIterables.unshift(
+        getPieceLayerAsyncIterable(file.stream(), {
+          pieceLength: iOpts.pieceLength,
+          padding: fileIndex !== lastFileIndex,
+          updateProgress,
+        })
       );
       if (fileIndex === lastFileIndex) {
         continue;
@@ -569,9 +565,7 @@ async function createV1(
       const paddingFile = createPaddingFile(paddingSize, commonDir);
       files.splice(fileIndex + 1, 0, paddingFile);
     }
-    v1PiecesReadableStream = concatenateStreams(
-      pieceLayerReadableStreamPromises
-    ).stream as ReadableStream<Uint8Array>;
+    v1PiecesAsyncIterable = concatenator(pieceLayerAsyncIterables);
   }
   // no padding files
   else {
@@ -580,14 +574,12 @@ async function createV1(
     await setProgressTotal(totalPieces);
 
     // concatenate all files into a single stream first
-    const {
-      stream: concatenatedFileReadableStream,
-    }: { stream: ReadableStream<Uint8Array> } = concatenateStreams(
-      files.map((file) => Promise.resolve(file.stream()))
+    const concatenatedFileAsyncIterable = concatenator(
+      files.map((file) => file.stream())
     );
     // and then hash it
-    v1PiecesReadableStream = getPieceLayerReadableStream(
-      concatenatedFileReadableStream,
+    v1PiecesAsyncIterable = getPieceLayerAsyncIterable(
+      concatenatedFileAsyncIterable,
       {
         pieceLength: iOpts.pieceLength,
         padding: false,
@@ -629,7 +621,9 @@ async function createV1(
           }),
       name: iOpts.name,
       "piece length": iOpts.pieceLength,
-      pieces: await new Response(v1PiecesReadableStream).arrayBuffer(),
+      pieces: await new Response(
+        fromIterable(v1PiecesAsyncIterable)
+      ).arrayBuffer(),
       ...(iOpts.isPrivate ? { private: true } : {}),
       ...(typeof iOpts.source === "undefined" ? {} : { source: iOpts.source }),
     },
@@ -814,30 +808,32 @@ async function createHybrid(
   // init piece layers
   const pieceLayers: PieceLayers = new Map();
 
-  const pieceLayerReadableStreamPromise: Promise<ReadableStream<Uint8Array>>[] =
-    [];
+  const pieceLayerAsyncIterables: AsyncIterable<Uint8Array>[] = [];
   let lastFileIndex = totalFileCount - 1;
   let fileIndex = -1;
   for (const [fileNode, file] of fileNodeToFileEntries) {
     ++fileIndex;
     // we need to tee one stream into two streams for v1 and v2
-    const [v1FileStream, v2FileStream] = file.stream().tee();
-    pieceLayerReadableStreamPromise.unshift(
-      Promise.resolve(
-        getPieceLayerReadableStream(v1FileStream, {
-          pieceLength: iOpts.pieceLength,
-          padding: fileIndex !== lastFileIndex,
-          updateProgress,
-        })
-      )
+    const [v1FileAsyncIterable, v2FileAsyncIterable] = file.stream().tee();
+    pieceLayerAsyncIterables.unshift(
+      getPieceLayerAsyncIterable(v1FileAsyncIterable, {
+        pieceLength: iOpts.pieceLength,
+        padding: fileIndex !== lastFileIndex,
+        updateProgress,
+      })
     );
     // v2
-    await populatePieceLayersAndFileNodes(v2FileStream, pieceLayers, fileNode, {
-      blockLength: iOpts.blockLength,
-      pieceLength: iOpts.pieceLength,
-      blocksPerPiece,
-      updateProgress,
-    });
+    await populatePieceLayersAndFileNodes(
+      v2FileAsyncIterable,
+      pieceLayers,
+      fileNode,
+      {
+        blockLength: iOpts.blockLength,
+        pieceLength: iOpts.pieceLength,
+        blocksPerPiece,
+        updateProgress,
+      }
+    );
     if (fileIndex === lastFileIndex) {
       break;
     }
@@ -850,9 +846,7 @@ async function createHybrid(
     files.splice(++fileIndex, 0, paddingFile);
     ++lastFileIndex;
   }
-  const v1PiecesReadableStream = concatenateStreams(
-    pieceLayerReadableStreamPromise
-  ).stream as ReadableStream<Uint8Array>;
+  const v1PiecesAsyncIterable = concatenator(pieceLayerAsyncIterables);
 
   const metaInfo: MetaInfo<TorrentType.HYBRID> = {
     ...(typeof iOpts.announce === "undefined"
@@ -889,8 +883,10 @@ async function createHybrid(
       "meta version": iOpts.metaVersion,
       name: iOpts.name,
       "piece length": iOpts.pieceLength,
-      // stream to array buffer
-      pieces: await new Response(v1PiecesReadableStream).arrayBuffer(),
+      // async iterable to array buffer
+      pieces: await new Response(
+        fromIterable(v1PiecesAsyncIterable)
+      ).arrayBuffer(),
       // only add private field when it is private
       ...(iOpts.isPrivate ? { private: true } : {}),
       ...(typeof iOpts.source === "undefined" ? {} : { source: iOpts.source }),
@@ -920,13 +916,13 @@ export async function create(
 
 /**
  * Populate piece layers and file node in a v2 torrent
- * @param fileStream
+ * @param fileAsyncIterable
  * @param pieceLayers
  * @param fileNode
  * @param opts
  */
 async function populatePieceLayersAndFileNodes(
-  fileStream: ReadableStream<Uint8Array>,
+  fileAsyncIterable: AsyncIterable<Uint8Array>,
   pieceLayers: PieceLayers,
   fileNode: FileTreeFileNode,
   opts: {
@@ -937,17 +933,17 @@ async function populatePieceLayersAndFileNodes(
   }
 ) {
   // get pieces root and piece layer readable streams
-  const { piecesRootReadableStream, pieceLayerReadableStream } =
-    getPiecesRootAndPieceLayerReadableStreams(fileStream, opts);
+  const { piecesRootAsyncIterable, pieceLayerAsyncIterable } =
+    getPiecesRootAndPieceLayerAsyncIterables(fileAsyncIterable, opts);
   // get buffer promise from pieces root
   const piecesRootArrayBufferPromise = new Response(
-    piecesRootReadableStream
+    fromIterable(piecesRootAsyncIterable)
   ).arrayBuffer();
   // only files that are larger than the piece size have piece layer entries
   // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=For%20each%20file%20in%20the%20file%20tree%20that%20is%20larger%20than%20the%20piece%20size%20it%20contains%20one%20string%20value
   if (fileNode[""].length > opts.pieceLength) {
     const pieceLayerArrayBufferPromise = new Response(
-      pieceLayerReadableStream
+      fromIterable(pieceLayerAsyncIterable)
     ).arrayBuffer();
     pieceLayers.set(
       await piecesRootArrayBufferPromise,
@@ -963,54 +959,78 @@ async function populatePieceLayersAndFileNodes(
 
 /**
  * Returns the piece layer of file(s) in a v1 type torrent
- * @param stream file stream
+ * @param stream file stream as async iterable
  * @param opts options
  * @returns piece layer
  */
-function getPieceLayerReadableStream(
-  stream: ReadableStream<Uint8Array>,
-  opts: {
+function getPieceLayerAsyncIterable(
+  stream: AsyncIterable<Uint8Array>,
+  {
+    pieceLength,
+    padding,
+    updateProgress,
+  }: {
     pieceLength: number;
     padding: boolean;
     updateProgress?: UpdateProgress;
   }
-): ReadableStream<Uint8Array> {
-  const pieceLayerReadableStream = stream
-    .pipeThrough(
-      new ChunkSplitter(opts.pieceLength, {
-        padding: opts.padding,
-      })
-    )
-    .pipeThrough(new PieceHasher(opts.updateProgress));
-  return pieceLayerReadableStream;
+): AsyncIterable<Uint8Array> {
+  return chunkHasher(
+    chunkRegulator(stream, {
+      outputLength: pieceLength,
+      padding: padding,
+    }),
+    { updateProgress: updateProgress }
+  );
 }
 
 /**
  * Returns the pieces root and piece layer of a file in a v2 type torrent
- * @param stream
+ * @param asyncIterable
  * @param opts
  * @returns
  */
-function getPiecesRootAndPieceLayerReadableStreams(
-  stream: ReadableStream<Uint8Array>,
-  opts: {
+function getPiecesRootAndPieceLayerAsyncIterables(
+  asyncIterable: AsyncIterable<Uint8Array>,
+  {
+    blockLength,
+    blocksPerPiece,
+    updateProgress,
+  }: {
     blockLength: number;
     blocksPerPiece: number;
     updateProgress?: UpdateProgress;
   }
-) {
-  const pieceLayerReadableStream: ReadableStream<Uint8Array> = stream
-    .pipeThrough(new ChunkSplitter(opts.blockLength))
-    .pipeThrough(new BlockHasher(opts.blocksPerPiece))
-    .pipeThrough(new MerkleRootCalculator(opts.updateProgress));
+): {
+  piecesRootAsyncIterable: AsyncIterable<Uint8Array>;
+  pieceLayerAsyncIterable: AsyncIterable<Uint8Array>;
+} {
+  const pieceLayerAsyncIterable = merkleRootCalculator(
+    chunkPacker(
+      chunkHasher(
+        chunkRegulator(asyncIterable, { outputLength: blockLength }),
+        {
+          hashAlgorithm: "SHA-256",
+        }
+      ),
+      { count: blocksPerPiece }
+    ),
+    {
+      updateProgress,
+    }
+  );
 
-  const [pl1ReadableStream, pl2ReadableStream] = pieceLayerReadableStream.tee();
+  const [pieceLayerAsyncIterable1, pieceLayerAsyncIterable2] = fromIterable(
+    pieceLayerAsyncIterable
+  ).tee();
 
   return {
-    piecesRootReadableStream: pl2ReadableStream
-      .pipeThrough(new MerkleTreeBalancer(opts.blocksPerPiece))
-      .pipeThrough(new MerkleRootCalculator()),
-    pieceLayerReadableStream: pl1ReadableStream,
+    piecesRootAsyncIterable: merkleRootCalculator(
+      chunkGrouper(pieceLayerAsyncIterable1, {
+        paddingMultiplier: blocksPerPiece,
+      })
+    ),
+    pieceLayerAsyncIterable: pieceLayerAsyncIterable2,
   };
 }
 

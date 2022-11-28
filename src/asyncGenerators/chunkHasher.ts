@@ -7,7 +7,7 @@ type JsSHA = JsSHA1 | JsSHA256;
 export type HashAlgorithm = "SHA-1" | "SHA-256";
 
 export interface ChunkHasherOptions {
-  hashAlgorithm: HashAlgorithm;
+  hashAlgorithm?: HashAlgorithm;
   updateProgress?: UpdateProgress;
 }
 

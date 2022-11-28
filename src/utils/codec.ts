@@ -13,8 +13,12 @@ export type BByteString<Strict extends boolean = true> = Strict extends true
   : BByteStringLoose;
 
 // bencode list type
-export type BListStrict = BData<true>[];
-export type BListLoose = BData<false>[];
+export type BListStrict = object &
+  (Iterable<BData<true>> | AsyncIterable<BData<true>>);
+
+export type BListLoose = object &
+  (Iterable<BData<false>> | AsyncIterable<BData<false>>);
+
 export type BList<Strict extends boolean = true> = Strict extends true
   ? BListStrict
   : BListLoose;
