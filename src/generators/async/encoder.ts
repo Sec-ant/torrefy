@@ -1,6 +1,6 @@
 import { type TrieMap } from "@sec-ant/trie-map";
 import { iterableSorter } from "../sync/iterableSorter.js";
-import { nullishValueEliminator } from "../sync/nullishValueEliminator.js";
+import { nullishValueDropper } from "../sync/nullishValueDropper.js";
 import {
   BByteString,
   BData,
@@ -107,7 +107,7 @@ export async function* encoder(
     // map: dictionary start
     else if (currentData instanceof Map) {
       yield BUFF_D;
-      const sortedDictionaryIterable = nullishValueEliminator(
+      const sortedDictionaryIterable = nullishValueDropper(
         iterableSorter(currentData.entries(), {
           compareFunction: ([key1], [key2]) => {
             key1 = typeof key1 === "string" ? key1 : textDecoder.decode(key1);
@@ -126,7 +126,7 @@ export async function* encoder(
     // object: dictionary start
     else if (isBObject(currentData)) {
       yield BUFF_D;
-      const sortedDictionaryIterable = nullishValueEliminator(
+      const sortedDictionaryIterable = nullishValueDropper(
         iterableSorter(Object.entries(currentData), {
           compareFunction: ([key1], [key2]) => {
             key1 = typeof key1 === "string" ? key1 : textDecoder.decode(key1);

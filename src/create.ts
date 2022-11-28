@@ -1,10 +1,10 @@
 import { fromIterable } from "@sec-ant/readable-stream";
-import { chunkRegulator } from "./generators/chunkRegulator.js";
-import { chunkHasher } from "./generators/chunkHasher.js";
-import { chunkPacker } from "./generators/chunkPacker.js";
+import { chunkRegulator } from "./generators/async/chunkRegulator.js";
+import { chunkHasher } from "./generators/async/chunkHasher.js";
+import { chunkPacker } from "./generators/async/chunkPacker.js";
 import { chunkGrouper } from "./generators/async/chunkGrouper.js";
-import { concatenator } from "./generators/concatenator.js";
-import { merkleRootCalculator } from "./generators/merkleRootCalculator.js";
+import { concatenator } from "./generators/async/concatenator.js";
+import { merkleRootCalculator } from "./generators/async/merkleRootCalculator.js";
 import { BObject } from "./utils/codec.js";
 import {
   FileAttrs,

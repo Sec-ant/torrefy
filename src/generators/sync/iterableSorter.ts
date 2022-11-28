@@ -1,4 +1,4 @@
-import { getSortedIndex } from "../utils/misc.js";
+import { getSortedIndex } from "../../utils/misc.js";
 
 export interface IterableSorterOptions<T> {
   compareFunction: (a: T, b: T) => number;

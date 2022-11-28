@@ -1,2 +1,2 @@
 export * from "./iterableSorter.js";
-export * from "./nullishValueEliminator.js";
+export * from "./nullishValueDropper.js";

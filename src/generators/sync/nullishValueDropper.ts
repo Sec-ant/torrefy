@@ -1,4 +1,4 @@
-export function* nullishValueEliminator<K, V>(
+export function* nullishValueDropper<K, V>(
   entries: Iterable<[key: K, value: V]>
 ) {
   for (const entry of entries) {
