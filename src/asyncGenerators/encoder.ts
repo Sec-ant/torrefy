@@ -1,3 +1,4 @@
+import { TrieMap } from "@sec-ant/trie-map";
 import { iterableSorter } from "../syncGenerators/iterableSorter.js";
 import {
   BByteString,
@@ -11,9 +12,34 @@ import {
 
 type BDictionaryEntry = [BByteString<false>, BData<false>];
 
+/**
+ * encoder hook
+ */
+export type EncoderHook = (
+  asyncIterable: AsyncIterable<Uint8Array>
+) => void | Promise<void>;
+
+/**
+ * encoder hook path
+ */
 export type EncoderHookPath = Iterable<string | number>;
 
-export async function* encoder(data: BData<false>) {
+/**
+ * encoder hook system
+ */
+export type EncoderHookSystem = TrieMap<EncoderHookPath, EncoderHook>;
+
+/**
+ * encoder options
+ */
+export interface EncoderOptions {
+  hookSystem?: EncoderHookSystem;
+}
+
+export async function* encoder(
+  data: BData<false>,
+  { hookSystem }: EncoderOptions = {}
+) {
   const textEncoder = new TextEncoder();
   const textDecoder = new TextDecoder();
   const path: (EncoderHookPath extends Iterable<infer PathElement>
@@ -133,8 +159,10 @@ export async function* encoder(data: BData<false>) {
       if (typeof k === "string") {
         path.pop();
         path.push(k);
-        /* if path matches, run callback */
-        // callback(encoder(v));
+        if (hookSystem) {
+          const hook = hookSystem.get(path);
+          hook && hook(encoder(v));
+        }
       }
       dataStack.push(v, k);
       continue;
@@ -168,8 +196,10 @@ export async function* encoder(data: BData<false>) {
       listIndexWeakMap.set(currentData, index);
       path.pop();
       path.push(index);
-      /* if path matches, callback */
-      // callback(encode(value))
+      if (hookSystem) {
+        const hook = hookSystem.get(path);
+        hook && hook(encoder(value));
+      }
       dataStack.push(value);
       continue;
     }
