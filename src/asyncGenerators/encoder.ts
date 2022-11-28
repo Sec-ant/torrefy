@@ -1,11 +1,8 @@
-import { iterableSort } from "../index.js";
 import { iterableSorter } from "../syncGenerators/iterableSorter.js";
 import {
   BByteString,
   BData,
-  BDictionary,
   BList,
-  BMap,
   BObject,
   BUFF_D,
   BUFF_E,
@@ -23,7 +20,7 @@ export async function* encoder(data: BData<false>) {
     ? PathElement
     : never)[] = [];
   const dataStack: BData<false>[] = [data];
-  const indexWeakMap = new WeakMap<BList<false>, number>();
+  const listIndexWeakMap = new WeakMap<BList<false>, number>();
   const sortedDictionaryIterableWeakSet = new WeakSet<
     Iterable<BDictionaryEntry>
   >();
@@ -80,112 +77,116 @@ export async function* encoder(data: BData<false>) {
       dataStack.pop();
       continue;
     }
-    // array list
-    else if (
-      !(currentData instanceof Map) &&
-      isSyncOrAsyncIterable(currentData) &&
-      !sortedDictionaryIterableWeakSet.has(
-        currentData as Iterable<BDictionaryEntry>
-      )
-    ) {
-      // get current value
-      const { value, done } = (
-        Symbol.iterator in currentData
-          ? currentData[Symbol.iterator]().next()
-          : await currentData[Symbol.asyncIterator]().next()
-      ) as IteratorResult<BData<false>, undefined>;
-      // previous index
-      const prevIndex = indexWeakMap.get(currentData);
-      // current index
-      let index: number;
-      // first iteration
-      if (typeof prevIndex === "undefined") {
-        yield BUFF_L;
-        // empty list end
-        if (done) {
-          yield BUFF_E;
-          dataStack.pop();
-          continue;
-        }
-        // non-empty list start
-        index = 0;
-      }
-      // consecutive iteration
-      else {
-        path.pop();
-        // non-empty list end
-        if (done) {
-          indexWeakMap.delete(currentData);
-          yield BUFF_E;
-          dataStack.pop();
-          continue;
-        }
-        // non-empty list follow
-        index = prevIndex + 1;
-      }
-      indexWeakMap.set(currentData, index);
-      path.push(index);
-      dataStack.push(value);
-      continue;
-    }
     // map: dictionary start
     else if (currentData instanceof Map) {
       yield BUFF_D;
-      const sortedBMapIterable = iterableSorter(currentData.entries(), {
+      const sortedDictionaryIterable = iterableSorter(currentData.entries(), {
         compareFunction: ([key1], [key2]) => {
           key1 = typeof key1 === "string" ? key1 : textDecoder.decode(key1);
           key2 = typeof key2 === "string" ? key2 : textDecoder.decode(key2);
           return key1 < key2 ? -1 : key1 > key2 ? 1 : 0;
         },
       });
-      sortedDictionaryIterableWeakSet.add(sortedBMapIterable);
+      sortedDictionaryIterableWeakSet.add(sortedDictionaryIterable);
       dataStack.pop();
-      dataStack.push(sortedBMapIterable);
+      dataStack.push(sortedDictionaryIterable);
+      // dummy key
+      path.push(-1);
       continue;
     }
     // object: dictionary start
-    else if (
-      !(Symbol.iterator in currentData) &&
-      !(Symbol.asyncIterator in currentData)
-    ) {
+    else if (isBObject(currentData)) {
       yield BUFF_D;
-      const sortedBMapIterable = iterableSorter(Object.entries(currentData), {
-        compareFunction: ([key1], [key2]) => {
-          key1 = typeof key1 === "string" ? key1 : textDecoder.decode(key1);
-          key2 = typeof key2 === "string" ? key2 : textDecoder.decode(key2);
-          return key1 < key2 ? -1 : key1 > key2 ? 1 : 0;
-        },
-      });
-      sortedDictionaryIterableWeakSet.add(sortedBMapIterable);
+      const sortedDictionaryIterable = iterableSorter(
+        Object.entries(currentData),
+        {
+          compareFunction: ([key1], [key2]) => {
+            key1 = typeof key1 === "string" ? key1 : textDecoder.decode(key1);
+            key2 = typeof key2 === "string" ? key2 : textDecoder.decode(key2);
+            return key1 < key2 ? -1 : key1 > key2 ? 1 : 0;
+          },
+        }
+      );
+      sortedDictionaryIterableWeakSet.add(sortedDictionaryIterable);
       dataStack.pop();
-      dataStack.push(sortedBMapIterable);
+      dataStack.push(sortedDictionaryIterable);
+      // dummy key
+      path.push(-1);
       continue;
     }
     // sorted map iterable: dictionary follow
     else if (
-      Symbol.iterator in currentData &&
-      sortedDictionaryIterableWeakSet.has(
-        currentData as Iterable<BDictionaryEntry>
-      )
+      isBDictionaryEntries(currentData, sortedDictionaryIterableWeakSet)
     ) {
       // get current value
       const { value, done } = currentData[
         Symbol.iterator
       ]().next() as IteratorResult<BDictionaryEntry, undefined>;
       if (done) {
-      } else {
-        const [key, v] = value;
+        path.pop();
+        sortedDictionaryIterableWeakSet.delete(currentData);
+        dataStack.pop();
+        yield BUFF_E;
+        continue;
       }
+      const [k, v] = value;
+      if (typeof k === "string") {
+        path.pop();
+        path.push(k);
+        /* if path matches, run callback */
+        // callback(encoder(v));
+      }
+      dataStack.push(v, k);
+      continue;
+    }
+    // array list
+    else {
+      // previous index
+      const prevIndex = listIndexWeakMap.get(currentData) ?? -1;
+      // first iteration
+      if (prevIndex === -1) {
+        yield BUFF_L;
+        // dummy index
+        path.push(-1);
+      }
+      // get current value
+      const { value, done } = (
+        Symbol.iterator in currentData
+          ? currentData[Symbol.iterator]().next()
+          : await currentData[Symbol.asyncIterator]().next()
+      ) as IteratorResult<BData<false>, undefined>;
+      // done
+      if (done) {
+        path.pop();
+        listIndexWeakMap.delete(currentData);
+        dataStack.pop();
+        yield BUFF_E;
+        continue;
+      }
+      // not done
+      const index = prevIndex + 1;
+      listIndexWeakMap.set(currentData, index);
+      path.pop();
+      path.push(index);
+      /* if path matches, callback */
+      // callback(encode(value))
+      dataStack.push(value);
+      continue;
     }
   }
 }
 
-function isSyncOrAsyncIterable(data: BData<false>): data is BList<false> {
-  return (
-    (typeof data === "function" || typeof data === "object") &&
-    data !== null &&
-    ((Symbol.iterator in data && typeof data[Symbol.iterator] === "function") ||
-      (Symbol.asyncIterator in data &&
-        typeof data[Symbol.asyncIterator] === "function"))
+function isBObject(
+  data: BList<false> | BObject<false>
+): data is BObject<false> {
+  return !(Symbol.iterator in data) && !(Symbol.asyncIterator in data);
+}
+
+function isBDictionaryEntries(
+  data: BList<false>,
+  sortedDictionaryIterableWeakSet: WeakSet<Iterable<BDictionaryEntry>>
+): data is Iterable<BDictionaryEntry> {
+  return sortedDictionaryIterableWeakSet.has(
+    data as Iterable<BDictionaryEntry>
   );
 }
