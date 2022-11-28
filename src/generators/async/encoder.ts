@@ -1,4 +1,4 @@
-import { TrieMap } from "@sec-ant/trie-map";
+import { type TrieMap } from "@sec-ant/trie-map";
 import { iterableSorter } from "../sync/iterableSorter.js";
 import { nullishValueEliminator } from "../sync/nullishValueEliminator.js";
 import {
