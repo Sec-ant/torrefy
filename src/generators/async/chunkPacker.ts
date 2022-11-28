@@ -1,4 +1,4 @@
-import { nextPowerOfTwo } from "../utils/misc.js";
+import { nextPowerOfTwo } from "../../utils/misc.js";
 
 type AssertInteger<N extends number> = number extends N
   ? N

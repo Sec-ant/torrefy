@@ -1,5 +1,6 @@
 import { TrieMap } from "@sec-ant/trie-map";
-import { iterableSorter } from "../syncGenerators/iterableSorter.js";
+import { iterableSorter } from "../sync/iterableSorter.js";
+import { nullishValueEliminator } from "../sync/nullishValueEliminator.js";
 import {
   BByteString,
   BData,
@@ -8,7 +9,7 @@ import {
   BUFF_D,
   BUFF_E,
   BUFF_L,
-} from "../utils/codec.js";
+} from "../../utils/codec.js";
 
 type BDictionaryEntry = [BByteString<false>, BData<false>];
 
@@ -106,13 +107,15 @@ export async function* encoder(
     // map: dictionary start
     else if (currentData instanceof Map) {
       yield BUFF_D;
-      const sortedDictionaryIterable = iterableSorter(currentData.entries(), {
-        compareFunction: ([key1], [key2]) => {
-          key1 = typeof key1 === "string" ? key1 : textDecoder.decode(key1);
-          key2 = typeof key2 === "string" ? key2 : textDecoder.decode(key2);
-          return key1 < key2 ? -1 : key1 > key2 ? 1 : 0;
-        },
-      });
+      const sortedDictionaryIterable = nullishValueEliminator(
+        iterableSorter(currentData.entries(), {
+          compareFunction: ([key1], [key2]) => {
+            key1 = typeof key1 === "string" ? key1 : textDecoder.decode(key1);
+            key2 = typeof key2 === "string" ? key2 : textDecoder.decode(key2);
+            return key1 < key2 ? -1 : key1 > key2 ? 1 : 0;
+          },
+        })
+      );
       sortedDictionaryIterableWeakSet.add(sortedDictionaryIterable);
       dataStack.pop();
       dataStack.push(sortedDictionaryIterable);
@@ -123,15 +126,14 @@ export async function* encoder(
     // object: dictionary start
     else if (isBObject(currentData)) {
       yield BUFF_D;
-      const sortedDictionaryIterable = iterableSorter(
-        Object.entries(currentData),
-        {
+      const sortedDictionaryIterable = nullishValueEliminator(
+        iterableSorter(Object.entries(currentData), {
           compareFunction: ([key1], [key2]) => {
             key1 = typeof key1 === "string" ? key1 : textDecoder.decode(key1);
             key2 = typeof key2 === "string" ? key2 : textDecoder.decode(key2);
             return key1 < key2 ? -1 : key1 > key2 ? 1 : 0;
           },
-        }
+        })
       );
       sortedDictionaryIterableWeakSet.add(sortedDictionaryIterable);
       dataStack.pop();

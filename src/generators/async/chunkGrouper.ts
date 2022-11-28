@@ -1,4 +1,4 @@
-import { nextPowerOfTwo, merkleRoot } from "../utils/misc.js";
+import { nextPowerOfTwo, merkleRoot } from "../../utils/misc.js";
 
 export interface ChunkGrouperOptions {
   /**

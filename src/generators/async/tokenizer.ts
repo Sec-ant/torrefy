@@ -6,8 +6,8 @@ import {
   BYTE_I,
   BYTE_L,
   isDigitByte,
-} from "../utils/codec.js";
-import { concatUint8Arrays } from "../utils/misc.js";
+} from "../../utils/codec.js";
+import { concatUint8Arrays } from "../../utils/misc.js";
 
 export type TokenType =
   | "Integer"

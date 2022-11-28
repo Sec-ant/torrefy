@@ -1,5 +1,5 @@
-import { UpdateProgress } from "../create.js";
-import { merkleRoot } from "../utils/misc.js";
+import { UpdateProgress } from "../../create.js";
+import { merkleRoot } from "../../utils/misc.js";
 
 export interface MerkleRootCalculatorOptions {
   updateProgress?: UpdateProgress;

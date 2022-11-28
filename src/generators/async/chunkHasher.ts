@@ -1,4 +1,4 @@
-import { UpdateProgress } from "../create.js";
+import { UpdateProgress } from "../../create.js";
 import type JsSHA1 from "jssha/sha1";
 import type JsSHA256 from "jssha/sha256";
 
