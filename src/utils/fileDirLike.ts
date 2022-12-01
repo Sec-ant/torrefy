@@ -36,7 +36,7 @@ export function isFileSystemDirectoryHandle(
     ) {
       return true;
     }
-  } catch (e) {
+  } catch {
     /* empty */
   }
   return false;
@@ -52,7 +52,7 @@ export function isFileSystemFileHandle(
     ) {
       return true;
     }
-  } catch (e) {
+  } catch {
     /* empty */
   }
   return false;
