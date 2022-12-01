@@ -103,15 +103,14 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
         // push path
         this.path.push(counter);
         // if hook system is provided
-        if (this.hookSystem) {
-          const hook = this.hookSystem.get(this.path);
-          if (hook) {
-            const newController = attachHook(controller, hook);
-            this.encode(member, newController);
-            hook({ value: undefined, done: true });
-          } else {
-            this.encode(member, controller);
-          }
+        let hook: EncoderHook | undefined;
+        if (this.hookSystem && (hook = this.hookSystem.get(this.path))) {
+          const newController = attachHook(controller, hook);
+          this.encode(member, newController);
+          hook({ value: undefined, done: true });
+          this.attachedHooks.set(hook, true);
+        } else {
+          this.encode(member, controller);
         }
         // pop path
         this.path.pop();
@@ -144,16 +143,14 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
           // encode key
           this.encode(key, controller);
           // if hook system is provided
-          if (this.hookSystem) {
-            const hook = this.hookSystem.get(this.path);
-            if (hook) {
-              const newController = attachHook(controller, hook);
-              this.encode(value, newController);
-              hook({ value: undefined, done: true });
-              this.attachedHooks.set(hook, true);
-            } else {
-              this.encode(value, controller);
-            }
+          let hook: EncoderHook | undefined;
+          if (this.hookSystem && (hook = this.hookSystem.get(this.path))) {
+            const newController = attachHook(controller, hook);
+            this.encode(value, newController);
+            hook({ value: undefined, done: true });
+            this.attachedHooks.set(hook, true);
+          } else {
+            this.encode(value, controller);
           }
           // pop path
           this.path.pop();
@@ -175,16 +172,14 @@ class EncoderUnderlyingSource implements UnderlyingSource<Uint8Array> {
         // encode key
         this.encode(key, controller);
         // if hook system is provided
-        if (this.hookSystem) {
-          const hook = this.hookSystem.get(this.path);
-          if (hook) {
-            const newController = attachHook(controller, hook);
-            this.encode(value, newController);
-            hook({ value: undefined, done: true });
-            this.attachedHooks.set(hook, true);
-          } else {
-            this.encode(value, controller);
-          }
+        let hook: EncoderHook | undefined;
+        if (this.hookSystem && (hook = this.hookSystem.get(this.path))) {
+          const newController = attachHook(controller, hook);
+          this.encode(value, newController);
+          hook({ value: undefined, done: true });
+          this.attachedHooks.set(hook, true);
+        } else {
+          this.encode(value, controller);
         }
         // pop path
         this.path.pop();
