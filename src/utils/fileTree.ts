@@ -243,84 +243,31 @@ export async function populateFileTree(
   // flag: should deep pack
   let shouldDeepPack = false;
   while (fileDirLikesStack.length) {
-    const currentDirEntry = dirEntryStack.at(-1);
+    // peek last member of the stack
+    const currentDirEntry = dirEntryStack.at(-1) as FileTreeDirEntry;
     const currentFileDirLikes = fileDirLikesStack.at(-1) as FileDirLikes;
-    for await (const fileDirLike of currentFileDirLikes) {
-      // type narrowing
-      if (!currentDirEntry) {
-        throw new Error("This is a bug");
-      }
-      // flag: input is file
-      const inputIsFile = isFile(fileDirLike);
-      // flag: input is file system directory handle
-      const inputIsFileSystemDirectoryHandle =
-        isFileSystemDirectoryHandle(fileDirLike);
-      // flag: input is file system directory entry
-      const inputIsFileSystemDirectoryEntry =
-        isFileSystemDirectoryEntry(fileDirLike);
-      // flag: input is file system file handle
-      const inputIsFileSystemFileHandle = isFileSystemFileHandle(fileDirLike);
-      // flag: input is file system file entry
-      const inputIsFileSystemFileEntry = isFileSystemFileEntry(fileDirLike);
-      // directory handle or entry
-      if (inputIsFileSystemDirectoryHandle || inputIsFileSystemDirectoryEntry) {
-        const dirName = fileDirLike.name;
-        const { index, result } = getSortedIndex(
-          currentDirEntry[1],
-          dirName,
-          compareFunction
-        );
-        let subDirEntry = result;
-        if (isFileTreeFileEntry(subDirEntry)) {
-          throw new Error("A same name file already exists");
-        }
-        if (
-          isFileTreeDirEntry(subDirEntry) &&
-          inputIsFileSystemDirectoryHandle
-        ) {
-          const registeredHandle = dirEntryToHandleMap.get(subDirEntry);
-          const isUnregistered =
-            !registeredHandle ||
-            !(await fileDirLike.isSameEntry(registeredHandle));
-          if (isUnregistered) {
-            throw new Error("File system handle not match");
-          }
-        }
-        if (!subDirEntry) {
-          subDirEntry = [dirName, []];
-          sort
-            ? currentDirEntry[1].splice(index, 0, subDirEntry)
-            : currentDirEntry[1].push(subDirEntry);
-          if (inputIsFileSystemDirectoryHandle) {
-            dirEntryToHandleMap.set(subDirEntry, fileDirLike);
-          }
-        }
-        dirEntryStack.push(subDirEntry);
-        const subFileDirLikes = inputIsFileSystemDirectoryHandle
-          ? fileDirLike.values()
-          : getEntriesOfDirEntry(fileDirLike);
-        fileDirLikesStack.push(subFileDirLikes);
-      }
+
+    // get next file dir like
+    const { value: fileDirLike, done } = (
+      Symbol.iterator in currentFileDirLikes
+        ? currentFileDirLikes[Symbol.iterator]().next()
+        : await currentFileDirLikes[Symbol.asyncIterator]().next()
+    ) as IteratorResult<FileDirLike, undefined>;
+
+    // done: pop stack and pack entries to map in places
+    if (done) {
+      fileDirLikesStack.pop();
+      const subDirEntry = dirEntryStack.pop() as FileTreeDirEntry;
+      // NOTE: TYPE MUTATION!
+      (subDirEntry[1] as unknown as FileTreeDirNode) = new Map<
+        string,
+        FileTreeDirNode | FileTreeFileNode
+      >(subDirEntry[1] as PackedFileTreeEntries);
+      continue;
     }
-  }
-  // recursively populate
-  for await (const fileDirLike of fileDirLikes) {
-    await recursivelyPopulateFileTree(fileDirLike);
-  }
-  return {
-    // NOTE: TYPE MUTATION!
-    fileTree: packEntriesToDirNode(rootDirEntry[1], shouldDeepPack),
-    traverseTree,
-    totalFileSize,
-    totalFileCount,
-  };
-  // recursive function
-  async function recursivelyPopulateFileTree(fileDirLike: FileDirLike) {
-    // get current entry
-    const currentDirEntry = dirEntryStack.at(-1);
-    if (!currentDirEntry) {
-      throw new Error("This is a bug");
-    }
+
+    // flags to narrow the file-dir-like type
+
     // flag: input is file
     const inputIsFile = isFile(fileDirLike);
     // flag: input is file system directory handle
@@ -333,18 +280,25 @@ export async function populateFileTree(
     const inputIsFileSystemFileHandle = isFileSystemFileHandle(fileDirLike);
     // flag: input is file system file entry
     const inputIsFileSystemFileEntry = isFileSystemFileEntry(fileDirLike);
-    // directory handle or entry
+
+    // file-dir-like is a directory handle or entry
     if (inputIsFileSystemDirectoryHandle || inputIsFileSystemDirectoryEntry) {
+      // get directory name
       const dirName = fileDirLike.name;
+      // binary search the name in the current directory entry
       const { index, result } = getSortedIndex(
         currentDirEntry[1],
         dirName,
         compareFunction
       );
+      // reassign the search result
       let subDirEntry = result;
+      // a matched file entry is found
       if (isFileTreeFileEntry(subDirEntry)) {
         throw new Error("A same name file already exists");
       }
+      // a matched directory entry is found
+      // check whether they point to the same directory
       if (isFileTreeDirEntry(subDirEntry) && inputIsFileSystemDirectoryHandle) {
         const registeredHandle = dirEntryToHandleMap.get(subDirEntry);
         const isUnregistered =
@@ -354,6 +308,8 @@ export async function populateFileTree(
           throw new Error("File system handle not match");
         }
       }
+      // no matched directory entry is found
+      // create a new one and insert
       if (!subDirEntry) {
         subDirEntry = [dirName, []];
         sort
@@ -363,28 +319,30 @@ export async function populateFileTree(
           dirEntryToHandleMap.set(subDirEntry, fileDirLike);
         }
       }
+      // push dir entry stack
       dirEntryStack.push(subDirEntry);
-      for await (const childFileSystemHandle of inputIsFileSystemDirectoryHandle
+      // push file-dir-likes stack
+      const subFileDirLikes = inputIsFileSystemDirectoryHandle
         ? fileDirLike.values()
-        : getEntriesOfDirEntry(fileDirLike)) {
-        await recursivelyPopulateFileTree(childFileSystemHandle);
-      }
-      // NOTE: TYPE MUTATION!
-      (subDirEntry[1] as unknown as FileTreeDirNode) = new Map<
-        string,
-        FileTreeDirNode | FileTreeFileNode
-      >(subDirEntry[1] as PackedFileTreeEntries);
-      dirEntryStack.pop();
+        : getEntriesOfDirEntry(fileDirLike);
+      fileDirLikesStack.push(subFileDirLikes);
+      // start next iteration
+      continue;
     }
-    // file handle or entry
+    // file-dir-like is a file handle or entry
     else if (inputIsFileSystemFileHandle || inputIsFileSystemFileEntry) {
+      // get file name
       const fileName = fileDirLike.name;
+      // binary search the name in the current directory entry
       const { index, result } = getSortedIndex(
         currentDirEntry[1],
         fileName,
         compareFunction
       );
+      // reassign the search result
       let fileEntry = result;
+      // a matched file entry is found
+      // check whether they point to te same file
       if (isFileTreeFileEntry(fileEntry) && inputIsFileSystemFileHandle) {
         const registeredHandle = fileEntryToHandleMap.get(fileEntry);
         const isUnregistered =
@@ -394,12 +352,17 @@ export async function populateFileTree(
           throw new Error("A same name file already exists");
         }
       }
+      // a matched directory entry is found
       if (isFileTreeDirEntry(fileEntry)) {
         throw new Error("A same name directory already exists");
       }
+      // this file entry has been visited
+      // start next iteration
       if (fileEntry) {
-        return;
+        continue;
       }
+      // no matched file entry is found
+      // create a new one and insert
       const file = await (inputIsFileSystemFileHandle
         ? fileDirLike.getFile()
         : getFileOfFileEntry(fileDirLike));
@@ -432,9 +395,12 @@ export async function populateFileTree(
       fileNodeToFileMap.set(fileTreeFileNode, file);
       totalFileSize += fileSize;
       totalFileCount += 1;
+      // start next iteration
+      continue;
     }
-    // file
+    // file-dir-like is a file
     else if (inputIsFile) {
+      // use file name to polyfill empty webkitRelativePath
       if (polyfillWebkitRelativePath && fileDirLike.webkitRelativePath === "") {
         Object.defineProperty(fileDirLike, "webkitRelativePath", {
           configurable: true,
@@ -442,46 +408,61 @@ export async function populateFileTree(
           get: () => fileDirLike.name,
         });
       }
+      // get file path segments
       const pathSegments = (
         fileDirLike.webkitRelativePath || fileDirLike.name
       ).split("/");
+      // init a local directory entry stack
       const localDirEntryStack = [rootDirEntry];
+      // parse path segments to a tree
       for (const [segmentIndex, pathSegment] of pathSegments.entries()) {
         if (segmentIndex >= 1) {
           shouldDeepPack = true;
         }
-        const localCurrentDirEntry = localDirEntryStack.at(-1);
-        if (!localCurrentDirEntry) {
-          throw new Error("This is a bug");
-        }
+        // peek last member of the stack
+        const localCurrentDirEntry = localDirEntryStack.at(
+          -1
+        ) as FileTreeDirEntry;
+        // binary search the path segment in the current directory entry
         const { index, result } = getSortedIndex(
           localCurrentDirEntry[1],
           pathSegment,
           compareFunction
         );
-        // dir
+        // path segment is a directory name
         if (segmentIndex < pathSegments.length - 1) {
+          // reassign the search result
           let subDirEntry = result;
+          // a matched file entry is found
           if (isFileTreeFileEntry(subDirEntry)) {
             throw new Error("A same name file already exists");
           }
+          // no matched directory entry is found
+          // create a new one and insert
           if (!subDirEntry) {
             subDirEntry = [pathSegment, []];
             sort
               ? localCurrentDirEntry[1].splice(index, 0, subDirEntry)
               : localCurrentDirEntry[1].push(subDirEntry);
           }
+          // push dir entry to local stack
           localDirEntryStack.push(subDirEntry);
         }
-        // file
+        // path segment is a file name
         else {
+          // reassign the search result
           let fileEntry = result;
+          // a matched directory entry is found
           if (isFileTreeDirEntry(fileEntry)) {
             throw new Error("A same name directory already exists");
           }
+          // this file entry has been visited
+          // iteration is over
           if (fileEntry) {
-            return;
+            continue;
           }
+          // no matched file entry is found
+          // create a new one and insert
           const fileSize = fileDirLike.size;
           const fileTreeFileNode: FileTreeFileNode = {
             "": {
@@ -497,12 +478,20 @@ export async function populateFileTree(
           totalFileCount += 1;
         }
       }
+      continue;
     }
     // unrecognized type
     else {
       throw new Error("Unrecognized type of input");
     }
   }
+  return {
+    // NOTE: TYPE MUTATION!
+    fileTree: packEntriesToDirNode(rootDirEntry[1], shouldDeepPack),
+    traverseTree,
+    totalFileSize,
+    totalFileCount,
+  };
   // traverse function
   function* traverseTree(
     node: FileTreeDirNode | FileTreeFileNode
