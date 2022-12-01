@@ -239,8 +239,70 @@ export async function populateFileTree(
   // states
   const rootDirEntry: FileTreeDirEntry = ["file tree", []];
   const dirEntryStack: FileTreeDirEntry[] = [rootDirEntry];
+  const fileDirLikesStack: FileDirLikes[] = [fileDirLikes];
   // flag: should deep pack
   let shouldDeepPack = false;
+  while (fileDirLikesStack.length) {
+    const currentDirEntry = dirEntryStack.at(-1);
+    const currentFileDirLikes = fileDirLikesStack.at(-1) as FileDirLikes;
+    for await (const fileDirLike of currentFileDirLikes) {
+      // type narrowing
+      if (!currentDirEntry) {
+        throw new Error("This is a bug");
+      }
+      // flag: input is file
+      const inputIsFile = isFile(fileDirLike);
+      // flag: input is file system directory handle
+      const inputIsFileSystemDirectoryHandle =
+        isFileSystemDirectoryHandle(fileDirLike);
+      // flag: input is file system directory entry
+      const inputIsFileSystemDirectoryEntry =
+        isFileSystemDirectoryEntry(fileDirLike);
+      // flag: input is file system file handle
+      const inputIsFileSystemFileHandle = isFileSystemFileHandle(fileDirLike);
+      // flag: input is file system file entry
+      const inputIsFileSystemFileEntry = isFileSystemFileEntry(fileDirLike);
+      // directory handle or entry
+      if (inputIsFileSystemDirectoryHandle || inputIsFileSystemDirectoryEntry) {
+        const dirName = fileDirLike.name;
+        const { index, result } = getSortedIndex(
+          currentDirEntry[1],
+          dirName,
+          compareFunction
+        );
+        let subDirEntry = result;
+        if (isFileTreeFileEntry(subDirEntry)) {
+          throw new Error("A same name file already exists");
+        }
+        if (
+          isFileTreeDirEntry(subDirEntry) &&
+          inputIsFileSystemDirectoryHandle
+        ) {
+          const registeredHandle = dirEntryToHandleMap.get(subDirEntry);
+          const isUnregistered =
+            !registeredHandle ||
+            !(await fileDirLike.isSameEntry(registeredHandle));
+          if (isUnregistered) {
+            throw new Error("File system handle not match");
+          }
+        }
+        if (!subDirEntry) {
+          subDirEntry = [dirName, []];
+          sort
+            ? currentDirEntry[1].splice(index, 0, subDirEntry)
+            : currentDirEntry[1].push(subDirEntry);
+          if (inputIsFileSystemDirectoryHandle) {
+            dirEntryToHandleMap.set(subDirEntry, fileDirLike);
+          }
+        }
+        dirEntryStack.push(subDirEntry);
+        const subFileDirLikes = inputIsFileSystemDirectoryHandle
+          ? fileDirLike.values()
+          : getEntriesOfDirEntry(fileDirLike);
+        fileDirLikesStack.push(subFileDirLikes);
+      }
+    }
+  }
   // recursively populate
   for await (const fileDirLike of fileDirLikes) {
     await recursivelyPopulateFileTree(fileDirLike);
