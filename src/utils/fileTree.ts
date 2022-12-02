@@ -284,12 +284,21 @@ export async function populateFileTree(
     if (inputIsFileSystemDirectoryHandle || inputIsFileSystemDirectoryEntry) {
       // get directory name
       const dirName = fileDirLike.name;
-      // binary search the name in the current directory entry
-      const { index, result } = getSortedIndex(
-        currentDirEntry[1],
-        dirName,
-        compareFunction
-      );
+      // get index and match result
+      let index: number;
+      let result: FileTreeFileEntry | FileTreeDirEntry | undefined;
+      if (sort) {
+        // binary search the name in the current directory entry
+        ({ index, result } = getSortedIndex(
+          currentDirEntry[1],
+          dirName,
+          compareFunction
+        ));
+      } else {
+        // naive search
+        result = currentDirEntry[1].find((entry) => entry[0] === dirName);
+        index = currentDirEntry[1].length;
+      }
       // reassign the search result
       let subDirEntry = result;
       // a matched file entry is found
@@ -311,9 +320,7 @@ export async function populateFileTree(
       // create a new one and insert
       if (!subDirEntry) {
         subDirEntry = [dirName, []];
-        sort
-          ? currentDirEntry[1].splice(index, 0, subDirEntry)
-          : currentDirEntry[1].push(subDirEntry);
+        currentDirEntry[1].splice(index, 0, subDirEntry);
         if (inputIsFileSystemDirectoryHandle) {
           dirEntryToHandleMap.set(subDirEntry, fileDirLike);
         }
@@ -332,12 +339,21 @@ export async function populateFileTree(
     else if (inputIsFileSystemFileHandle || inputIsFileSystemFileEntry) {
       // get file name
       const fileName = fileDirLike.name;
-      // binary search the name in the current directory entry
-      const { index, result } = getSortedIndex(
-        currentDirEntry[1],
-        fileName,
-        compareFunction
-      );
+      // get index and match result
+      let index: number;
+      let result: FileTreeFileEntry | FileTreeDirEntry | undefined;
+      if (sort) {
+        // binary search the name in the current directory entry
+        ({ index, result } = getSortedIndex(
+          currentDirEntry[1],
+          fileName,
+          compareFunction
+        ));
+      } else {
+        // naive search
+        result = currentDirEntry[1].find((entry) => entry[0] === fileName);
+        index = currentDirEntry[1].length;
+      }
       // reassign the search result
       let fileEntry = result;
       // a matched file entry is found
@@ -385,9 +401,7 @@ export async function populateFileTree(
         },
       };
       fileEntry = [fileName, fileTreeFileNode];
-      sort
-        ? currentDirEntry[1].splice(index, 0, fileEntry)
-        : currentDirEntry[1].push(fileEntry);
+      currentDirEntry[1].splice(index, 0, fileEntry);
       if (inputIsFileSystemFileHandle) {
         fileEntryToHandleMap.set(fileEntry, fileDirLike);
       }
@@ -422,12 +436,21 @@ export async function populateFileTree(
         const localCurrentDirEntry = localDirEntryStack.at(
           -1
         ) as FileTreeDirEntry;
-        // binary search the path segment in the current directory entry
-        const { index, result } = getSortedIndex(
-          localCurrentDirEntry[1],
-          pathSegment,
-          compareFunction
-        );
+        // get index and match result
+        let index: number;
+        let result: FileTreeFileEntry | FileTreeDirEntry | undefined;
+        if (sort) {
+          // binary search the path segment in the current directory entry
+          ({ index, result } = getSortedIndex(
+            localCurrentDirEntry[1],
+            pathSegment,
+            compareFunction
+          ));
+        } else {
+          // naive search
+          result = currentDirEntry[1].find((entry) => entry[0] === pathSegment);
+          index = currentDirEntry[1].length;
+        }
         // path segment is a directory name
         if (segmentIndex < pathSegments.length - 1) {
           // reassign the search result
@@ -440,9 +463,7 @@ export async function populateFileTree(
           // create a new one and insert
           if (!subDirEntry) {
             subDirEntry = [pathSegment, []];
-            sort
-              ? localCurrentDirEntry[1].splice(index, 0, subDirEntry)
-              : localCurrentDirEntry[1].push(subDirEntry);
+            localCurrentDirEntry[1].splice(index, 0, subDirEntry);
           }
           // push dir entry to local stack
           localDirEntryStack.push(subDirEntry);
@@ -469,9 +490,7 @@ export async function populateFileTree(
             },
           };
           fileEntry = [pathSegment, fileTreeFileNode];
-          sort
-            ? localCurrentDirEntry[1].splice(index, 0, fileEntry)
-            : localCurrentDirEntry[1].push(fileEntry);
+          localCurrentDirEntry[1].splice(index, 0, fileEntry);
           fileNodeToFileMap.set(fileTreeFileNode, fileDirLike);
           totalFileSize += fileSize;
           totalFileCount += 1;
