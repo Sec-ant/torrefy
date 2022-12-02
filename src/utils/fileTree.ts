@@ -183,20 +183,15 @@ export function resolveCommonDirAndTorrentName(
   };
 }
 
-export type PopulateOptions =
-  | {
-      sort?: false;
-      compareFunction?: never;
-      polyfillWebkitRelativePath?: boolean;
-    }
-  | {
-      sort?: true;
-      compareFunction?: (
-        entry: FileTreeFileEntry | FileTreeDirEntry,
-        name: string
-      ) => number;
-      polyfillWebkitRelativePath?: boolean;
-    };
+interface PopulateOptions {
+  mix: boolean;
+  sort: boolean;
+  compareFunction: (
+    entry: FileTreeFileEntry | FileTreeDirEntry,
+    name: string
+  ) => number;
+  polyfillWebkitRelativePath: boolean;
+}
 
 export type TraverseTree = (
   node: FileTreeDirNode | FileTreeFileNode
@@ -211,10 +206,12 @@ export type TraverseTree = (
 export async function populateFileTree(
   fileDirLikes: FileDirLikes,
   {
+    mix = true,
     sort = true,
     compareFunction = compareEntryNames,
     polyfillWebkitRelativePath = true,
   }: PopulateOptions = {
+    mix: true,
     sort: true,
     compareFunction: compareEntryNames,
     polyfillWebkitRelativePath: true,
@@ -241,7 +238,7 @@ export async function populateFileTree(
   const dirEntryStack: FileTreeDirEntry[] = [rootDirEntry];
   const fileDirLikesStack: FileDirLikes[] = [fileDirLikes];
   // flag: should deep pack
-  let shouldDeepPack = false;
+  let shouldDeepPack = mix ? true : false;
   while (fileDirLikesStack.length) {
     // peek last member of the stack
     const currentDirEntry = dirEntryStack.at(-1) as FileTreeDirEntry;
@@ -258,11 +255,13 @@ export async function populateFileTree(
     if (done) {
       fileDirLikesStack.pop();
       const subDirEntry = dirEntryStack.pop() as FileTreeDirEntry;
-      // NOTE: TYPE MUTATION!
-      (subDirEntry[1] as unknown as FileTreeDirNode) = new Map<
-        string,
-        FileTreeDirNode | FileTreeFileNode
-      >(subDirEntry[1] as PackedFileTreeEntries);
+      if (!shouldDeepPack) {
+        // NOTE: TYPE MUTATION!
+        (subDirEntry[1] as unknown as FileTreeDirNode) = new Map<
+          string,
+          FileTreeDirNode | FileTreeFileNode
+        >(subDirEntry[1] as PackedFileTreeEntries);
+      }
       continue;
     }
 
