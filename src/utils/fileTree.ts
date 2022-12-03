@@ -184,13 +184,12 @@ export function resolveCommonDirAndTorrentName(
 }
 
 interface PopulateOptions {
-  mix: boolean;
-  sort: boolean;
-  compareFunction: (
+  sort?: boolean;
+  compareFunction?: (
     entry: FileTreeFileEntry | FileTreeDirEntry,
     name: string
   ) => number;
-  polyfillWebkitRelativePath: boolean;
+  polyfillWebkitRelativePath?: boolean;
 }
 
 export type TraverseTree = (
@@ -206,12 +205,10 @@ export type TraverseTree = (
 export async function populateFileTree(
   fileDirLikes: FileDirLikes,
   {
-    mix = true,
     sort = true,
     compareFunction = compareEntryNames,
     polyfillWebkitRelativePath = true,
   }: PopulateOptions = {
-    mix: true,
     sort: true,
     compareFunction: compareEntryNames,
     polyfillWebkitRelativePath: true,
@@ -238,19 +235,17 @@ export async function populateFileTree(
   const dirEntryStack: FileTreeDirEntry[] = [rootDirEntry];
   const fileDirLikesStack: FileDirLikes[] = [fileDirLikes];
   // flag: should deep pack
-  let shouldDeepPack = mix ? true : false;
+  let shouldDeepPack = false;
   while (fileDirLikesStack.length) {
     // peek last member of the stack
     const currentDirEntry = dirEntryStack.at(-1) as FileTreeDirEntry;
     const currentFileDirLikes = fileDirLikesStack.at(-1) as FileDirLikes;
-
     // get next file dir like
     const { value: fileDirLike, done } = (
       Symbol.iterator in currentFileDirLikes
         ? currentFileDirLikes[Symbol.iterator]().next()
         : await currentFileDirLikes[Symbol.asyncIterator]().next()
     ) as IteratorResult<FileDirLike, undefined>;
-
     // done: pop stack and pack entries to map in places
     if (done) {
       fileDirLikesStack.pop();
@@ -264,9 +259,7 @@ export async function populateFileTree(
       }
       continue;
     }
-
     // flags to narrow the file-dir-like type
-
     // flag: input is file
     const inputIsFile = isFile(fileDirLike);
     // flag: input is file system directory handle
@@ -279,7 +272,6 @@ export async function populateFileTree(
     const inputIsFileSystemFileHandle = isFileSystemFileHandle(fileDirLike);
     // flag: input is file system file entry
     const inputIsFileSystemFileEntry = isFileSystemFileEntry(fileDirLike);
-
     // file-dir-like is a directory handle or entry
     if (inputIsFileSystemDirectoryHandle || inputIsFileSystemDirectoryEntry) {
       // get directory name
@@ -503,48 +495,63 @@ export async function populateFileTree(
       throw new Error("Unrecognized type of input");
     }
   }
+  // NOTE: TYPE MUTATION!
+  if (shouldDeepPack) {
+    const dirEntryStack: FileTreeDirEntry[] = [rootDirEntry];
+    while (dirEntryStack.length) {
+      const currentDirEntry = dirEntryStack.at(-1) as FileTreeDirEntry;
+      const { value, done } = currentDirEntry[1]
+        ?.[Symbol.iterator]()
+        .next() as IteratorResult<
+        FileTreeFileEntry | FileTreeDirEntry,
+        undefined
+      >;
+      if (done) {
+        const subDirEntry = dirEntryStack.pop() as FileTreeDirEntry;
+        // NOTE: TYPE MUTATION!
+        (subDirEntry[1] as unknown as FileTreeDirNode) = new Map<
+          string,
+          FileTreeDirNode | FileTreeFileNode
+        >(subDirEntry[1] as PackedFileTreeEntries);
+        continue;
+      }
+      if (isFileTreeDirEntry(value)) {
+        dirEntryStack.push(value);
+      }
+    }
+  }
   return {
-    // NOTE: TYPE MUTATION!
-    fileTree: packEntriesToDirNode(rootDirEntry[1], shouldDeepPack),
+    // NOTE: FORCE TYPE CAST!
+    fileTree: rootDirEntry[1] as unknown as FileTreeDirNode,
     traverseTree,
     totalFileSize,
     totalFileCount,
   };
-  // traverse function
+  // traverse tree function
   function* traverseTree(
     node: FileTreeDirNode | FileTreeFileNode
   ): Generator<[FileTreeFileNode, File], void, unknown> {
-    if (isFileTreeDirNode(node)) {
-      for (const subNode of node.values()) {
-        yield* traverseTree(subNode);
-      }
-    } else {
-      yield [node, fileNodeToFileMap.get(node) as File];
-    }
-  }
-}
-
-export function packEntriesToDirNode(
-  entries: PackedFileTreeEntries | FileTreeEntries,
-  shouldDeepPack = false
-): FileTreeDirNode {
-  if (shouldDeepPack) {
-    recursivelyPack(entries as FileTreeEntries);
-  }
-  return new Map<string, FileTreeDirNode | FileTreeFileNode>(
-    entries as PackedFileTreeEntries
-  );
-}
-
-function recursivelyPack(fileTreeEntries: FileTreeEntries) {
-  for (const fileTreeEntry of fileTreeEntries) {
-    if (isFileTreeDirEntry(fileTreeEntry)) {
-      const newEntries = fileTreeEntry[1];
-      recursivelyPack(newEntries);
-      (fileTreeEntry[1] as unknown as FileTreeDirNode) = new Map<
-        string,
+    const nodesStack: Iterable<FileTreeDirNode | FileTreeFileNode>[] = [[node]];
+    while (nodesStack.length) {
+      const currentNodes = nodesStack.at(-1) as Iterable<
         FileTreeDirNode | FileTreeFileNode
-      >(newEntries as PackedFileTreeEntries);
+      >;
+      const { value: currentNode, done } = currentNodes[
+        Symbol.iterator
+      ]().next() as IteratorResult<
+        FileTreeFileNode | FileTreeDirNode,
+        undefined
+      >;
+      if (done) {
+        nodesStack.pop();
+        continue;
+      }
+      if (isFileTreeDirNode(currentNode)) {
+        nodesStack.push(currentNode.values());
+        continue;
+      } else {
+        yield [currentNode, fileNodeToFileMap.get(currentNode) as File];
+      }
     }
   }
 }

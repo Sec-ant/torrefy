@@ -1,6 +1,16 @@
+export type FileSystemHandles =
+  | AsyncIterable<FileSystemHandle>
+  | Iterable<FileSystemHandle>;
+
+export type FileSystemEntries =
+  | AsyncIterable<FileSystemEntry>
+  | Iterable<FileSystemEntry>;
+
+export type Files = AsyncIterable<File> | Iterable<File>;
+
 export type FileDirLike = FileSystemHandle | FileSystemEntry | File;
 
-export type FileDirLikes = Iterable<FileDirLike> | AsyncIterable<FileDirLike>;
+export type FileDirLikes = FileSystemHandles | FileSystemEntries | Files;
 
 export function isFile(fileDirLike: FileDirLike): fileDirLike is File {
   return fileDirLike instanceof File;
