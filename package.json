@@ -43,21 +43,22 @@
     "docs": "typedoc --plugin typedoc-plugin-markdown ./src/index.ts"
   },
   "devDependencies": {
-    "@types/uuid": "^8.3.4",
+    "@types/uuid": "^9.0.0",
     "@types/wicg-file-system-access": "^2020.9.5",
-    "@typescript-eslint/eslint-plugin": "^5.44.0",
-    "@typescript-eslint/parser": "^5.44.0",
-    "eslint": "^8.28.0",
+    "@typescript-eslint/eslint-plugin": "^5.45.1",
+    "@typescript-eslint/parser": "^5.45.1",
+    "eslint": "^8.29.0",
     "http-server": "^14.1.1",
     "mocha": "^10.1.0",
     "prettier": "^2.8.0",
-    "ts-loader": "^9.4.1",
+    "ts-loader": "^9.4.2",
     "tslib": "^2.4.1",
     "typedoc": "^0.23.21",
-    "typedoc-plugin-markdown": "^3.13.6",
+    "typedoc-plugin-markdown": "^3.14.0",
     "typescript": "^4.9.3",
+    "vite": "^3.2.5",
     "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.0"
+    "webpack-cli": "^5.0.1"
   },
   "dependencies": {
     "@sec-ant/readable-stream": "^0.1.0",
