@@ -196,6 +196,17 @@ export type TraverseTree = (
   node: FileTreeDirNode | FileTreeFileNode
 ) => Generator<[FileTreeFileNode, File], void, unknown>;
 
+type FileDirLikeIterator =
+  | Iterator<FileDirLike, void>
+  | AsyncIterator<FileDirLike, void>;
+
+type FileTreeEntryIterator = Iterator<
+  FileTreeFileEntry | FileTreeDirEntry,
+  void
+>;
+
+type FileTreeNodeIterator = Iterator<FileTreeDirNode | FileTreeFileNode, void>;
+
 /**
  * Parse file-dir-likes into a file tree
  * @param fileDirLikes
@@ -233,22 +244,28 @@ export async function populateFileTree(
   // states
   const rootDirEntry: FileTreeDirEntry = ["file tree", []];
   const dirEntryStack: FileTreeDirEntry[] = [rootDirEntry];
-  const fileDirLikesStack: FileDirLikes[] = [fileDirLikes];
+  const fileDirLikeIteratorStack: FileDirLikeIterator[] = [
+    Symbol.iterator in fileDirLikes
+      ? fileDirLikes[Symbol.iterator]()
+      : fileDirLikes[Symbol.asyncIterator](),
+  ];
   // flag: should deep pack
   let shouldDeepPack = false;
-  while (fileDirLikesStack.length) {
+  while (fileDirLikeIteratorStack.length) {
+    await new Promise<void>((resolve) => {
+      setTimeout(() => resolve(), 1000);
+    });
     // peek last member of the stack
     const currentDirEntry = dirEntryStack.at(-1) as FileTreeDirEntry;
-    const currentFileDirLikes = fileDirLikesStack.at(-1) as FileDirLikes;
+    const currentFileDirLikeIterator = fileDirLikeIteratorStack.at(
+      -1
+    ) as FileDirLikeIterator;
     // get next file dir like
-    const { value: fileDirLike, done } = (
-      Symbol.iterator in currentFileDirLikes
-        ? currentFileDirLikes[Symbol.iterator]().next()
-        : await currentFileDirLikes[Symbol.asyncIterator]().next()
-    ) as IteratorResult<FileDirLike, undefined>;
+    const { value: fileDirLike, done } =
+      await currentFileDirLikeIterator.next();
     // done: pop stack and pack entries to map in places
     if (done) {
-      fileDirLikesStack.pop();
+      fileDirLikeIteratorStack.pop();
       const subDirEntry = dirEntryStack.pop() as FileTreeDirEntry;
       if (!shouldDeepPack) {
         // NOTE: TYPE MUTATION!
@@ -323,7 +340,8 @@ export async function populateFileTree(
       const subFileDirLikes = inputIsFileSystemDirectoryHandle
         ? fileDirLike.values()
         : getEntriesOfDirEntry(fileDirLike);
-      fileDirLikesStack.push(subFileDirLikes);
+      const subFileDirLikesIterator = subFileDirLikes[Symbol.asyncIterator]();
+      fileDirLikeIteratorStack.push(subFileDirLikesIterator);
       // start next iteration
       continue;
     }
@@ -498,15 +516,16 @@ export async function populateFileTree(
   // NOTE: TYPE MUTATION!
   if (shouldDeepPack) {
     const dirEntryStack: FileTreeDirEntry[] = [rootDirEntry];
+    const fileTreeEntryIteratorStack: FileTreeEntryIterator[] = [
+      rootDirEntry[1][Symbol.iterator](),
+    ];
     while (dirEntryStack.length) {
-      const currentDirEntry = dirEntryStack.at(-1) as FileTreeDirEntry;
-      const { value, done } = currentDirEntry[1]
-        ?.[Symbol.iterator]()
-        .next() as IteratorResult<
-        FileTreeFileEntry | FileTreeDirEntry,
-        undefined
-      >;
+      const currentFileTreeEntryIterator = fileTreeEntryIteratorStack.at(
+        -1
+      ) as FileTreeEntryIterator;
+      const { value, done } = currentFileTreeEntryIterator.next();
       if (done) {
+        fileTreeEntryIteratorStack.pop();
         const subDirEntry = dirEntryStack.pop() as FileTreeDirEntry;
         // NOTE: TYPE MUTATION!
         (subDirEntry[1] as unknown as FileTreeDirNode) = new Map<
@@ -517,6 +536,7 @@ export async function populateFileTree(
       }
       if (isFileTreeDirEntry(value)) {
         dirEntryStack.push(value);
+        fileTreeEntryIteratorStack.push(value[1][Symbol.iterator]());
       }
     }
   }
@@ -531,23 +551,20 @@ export async function populateFileTree(
   function* traverseTree(
     node: FileTreeDirNode | FileTreeFileNode
   ): Generator<[FileTreeFileNode, File], void, unknown> {
-    const nodesStack: Iterable<FileTreeDirNode | FileTreeFileNode>[] = [[node]];
-    while (nodesStack.length) {
-      const currentNodes = nodesStack.at(-1) as Iterable<
-        FileTreeDirNode | FileTreeFileNode
-      >;
-      const { value: currentNode, done } = currentNodes[
-        Symbol.iterator
-      ]().next() as IteratorResult<
-        FileTreeFileNode | FileTreeDirNode,
-        undefined
-      >;
+    const fileTreeNodeIteratorStack: FileTreeNodeIterator[] = [
+      [node][Symbol.iterator](),
+    ];
+    while (fileTreeNodeIteratorStack.length) {
+      const currentFileTreeNodeIterator = fileTreeNodeIteratorStack.at(
+        -1
+      ) as FileTreeNodeIterator;
+      const { value: currentNode, done } = currentFileTreeNodeIterator.next();
       if (done) {
-        nodesStack.pop();
+        fileTreeNodeIteratorStack.pop();
         continue;
       }
       if (isFileTreeDirNode(currentNode)) {
-        nodesStack.push(currentNode.values());
+        fileTreeNodeIteratorStack.push(currentNode.values()[Symbol.iterator]());
         continue;
       } else {
         yield [currentNode, fileNodeToFileMap.get(currentNode) as File];
