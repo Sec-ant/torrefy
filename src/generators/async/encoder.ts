@@ -37,6 +37,12 @@ export interface EncoderOptions {
   hookSystem?: EncoderHookSystem;
 }
 
+type BDictionaryEntryIterator = Iterator<BDictionaryEntry, void>;
+
+type BDataIterator =
+  | Iterator<BData<false>, void, undefined>
+  | AsyncIterator<BData<false>, void, undefined>;
+
 export async function* encoder(
   data: BData<false>,
   { hookSystem }: EncoderOptions = {}
@@ -47,6 +53,8 @@ export async function* encoder(
     ? PathElement
     : never)[] = [];
   const dataStack: BData<false>[] = [data];
+  const bDictionaryEntryIteratorStack: BDictionaryEntryIterator[] = [];
+  const bDataIteratorStack: BDataIterator[] = [];
   const listIndexWeakMap = new WeakMap<BList<false>, number>();
   const sortedDictionaryIterableWeakSet = new WeakSet<
     Iterable<BDictionaryEntry>
@@ -119,6 +127,9 @@ export async function* encoder(
       sortedDictionaryIterableWeakSet.add(sortedDictionaryIterable);
       dataStack.pop();
       dataStack.push(sortedDictionaryIterable);
+      bDictionaryEntryIteratorStack.push(
+        sortedDictionaryIterable[Symbol.iterator]()
+      );
       // dummy key
       path.push(-1);
       continue;
@@ -138,6 +149,9 @@ export async function* encoder(
       sortedDictionaryIterableWeakSet.add(sortedDictionaryIterable);
       dataStack.pop();
       dataStack.push(sortedDictionaryIterable);
+      bDictionaryEntryIteratorStack.push(
+        sortedDictionaryIterable[Symbol.iterator]()
+      );
       // dummy key
       path.push(-1);
       continue;
@@ -146,14 +160,16 @@ export async function* encoder(
     else if (
       isBDictionaryEntries(currentData, sortedDictionaryIterableWeakSet)
     ) {
+      const currentIterator = bDictionaryEntryIteratorStack.at(
+        -1
+      ) as BDictionaryEntryIterator;
       // get current value
-      const { value, done } = currentData[
-        Symbol.iterator
-      ]().next() as IteratorResult<BDictionaryEntry, undefined>;
+      const { value, done } = currentIterator.next();
       if (done) {
         path.pop();
         sortedDictionaryIterableWeakSet.delete(currentData);
         dataStack.pop();
+        bDictionaryEntryIteratorStack.pop();
         yield BUFF_E;
         continue;
       }
@@ -178,18 +194,21 @@ export async function* encoder(
         yield BUFF_L;
         // dummy index
         path.push(-1);
+        bDataIteratorStack.push(
+          Symbol.iterator in currentData
+            ? currentData[Symbol.iterator]()
+            : currentData[Symbol.asyncIterator]()
+        );
       }
+      const currentIterator = bDataIteratorStack.at(-1) as BDataIterator;
       // get current value
-      const { value, done } = (
-        Symbol.iterator in currentData
-          ? currentData[Symbol.iterator]().next()
-          : await currentData[Symbol.asyncIterator]().next()
-      ) as IteratorResult<BData<false>, undefined>;
+      const { value, done } = await currentIterator.next();
       // done
       if (done) {
         path.pop();
         listIndexWeakMap.delete(currentData);
         dataStack.pop();
+        bDataIteratorStack.pop();
         yield BUFF_E;
         continue;
       }
