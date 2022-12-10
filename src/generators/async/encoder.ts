@@ -43,6 +43,15 @@ type BDataIterator =
   | Iterator<BData<false>, void, undefined>
   | AsyncIterator<BData<false>, void, undefined>;
 
+interface BDictionaryState {
+  iterator: BDictionaryEntryIterator;
+}
+
+interface BListState {
+  iterator: BDataIterator;
+  index: number;
+}
+
 export async function* encoder(
   data: BData<false>,
   { hookSystem }: EncoderOptions = {}
@@ -53,12 +62,11 @@ export async function* encoder(
     ? PathElement
     : never)[] = [];
   const dataStack: BData<false>[] = [data];
-  const bDictionaryEntryIteratorStack: BDictionaryEntryIterator[] = [];
-  const bDataIteratorStack: BDataIterator[] = [];
-  const listIndexWeakMap = new WeakMap<BList<false>, number>();
-  const sortedDictionaryIterableWeakSet = new WeakSet<
-    Iterable<BDictionaryEntry>
+  const bDictionaryWeakMap = new WeakMap<
+    Iterable<BDictionaryEntry>,
+    BDictionaryState
   >();
+  const bListWeakMap = new WeakMap<BList<false>, BListState>();
   while (dataStack.length) {
     const currentData = dataStack.at(-1);
     // undefined or null: ignore
@@ -115,6 +123,7 @@ export async function* encoder(
     // map: dictionary start
     else if (currentData instanceof Map) {
       yield BUFF_D;
+      // sort
       const sortedDictionaryIterable = nullishValueDropper(
         iterableSorter(currentData.entries(), {
           compareFunction: ([key1], [key2]) => {
@@ -124,12 +133,13 @@ export async function* encoder(
           },
         })
       );
-      sortedDictionaryIterableWeakSet.add(sortedDictionaryIterable);
+      // register
+      bDictionaryWeakMap.set(sortedDictionaryIterable, {
+        iterator: sortedDictionaryIterable[Symbol.iterator](),
+      });
+      // replace with sorted iterable
       dataStack.pop();
       dataStack.push(sortedDictionaryIterable);
-      bDictionaryEntryIteratorStack.push(
-        sortedDictionaryIterable[Symbol.iterator]()
-      );
       // dummy key
       path.push(-1);
       continue;
@@ -137,6 +147,7 @@ export async function* encoder(
     // object: dictionary start
     else if (isBObject(currentData)) {
       yield BUFF_D;
+      // sort
       const sortedDictionaryIterable = nullishValueDropper(
         iterableSorter(Object.entries(currentData), {
           compareFunction: ([key1], [key2]) => {
@@ -146,33 +157,33 @@ export async function* encoder(
           },
         })
       );
-      sortedDictionaryIterableWeakSet.add(sortedDictionaryIterable);
+      // register
+      bDictionaryWeakMap.set(sortedDictionaryIterable, {
+        iterator: sortedDictionaryIterable[Symbol.iterator](),
+      });
+      // replace with sorted iterable
       dataStack.pop();
       dataStack.push(sortedDictionaryIterable);
-      bDictionaryEntryIteratorStack.push(
-        sortedDictionaryIterable[Symbol.iterator]()
-      );
       // dummy key
       path.push(-1);
       continue;
     }
     // sorted map iterable: dictionary follow
-    else if (
-      isBDictionaryEntries(currentData, sortedDictionaryIterableWeakSet)
-    ) {
-      const currentIterator = bDictionaryEntryIteratorStack.at(
-        -1
-      ) as BDictionaryEntryIterator;
+    else if (isBDictionaryEntries(currentData, bDictionaryWeakMap)) {
+      const currentIterator = (
+        bDictionaryWeakMap.get(currentData) as BDictionaryState
+      ).iterator;
       // get current value
       const { value, done } = currentIterator.next();
+      // done
       if (done) {
         path.pop();
-        sortedDictionaryIterableWeakSet.delete(currentData);
+        bDictionaryWeakMap.delete(currentData);
         dataStack.pop();
-        bDictionaryEntryIteratorStack.pop();
         yield BUFF_E;
         continue;
       }
+      // not done
       const [k, v] = value;
       if (typeof k === "string") {
         path.pop();
@@ -187,36 +198,38 @@ export async function* encoder(
     }
     // array list
     else {
-      // previous index
-      const prevIndex = listIndexWeakMap.get(currentData) ?? -1;
-      // first iteration
-      if (prevIndex === -1) {
+      // get state
+      let state = bListWeakMap.get(currentData);
+      // first access
+      if (!state) {
+        state = {
+          iterator:
+            Symbol.iterator in currentData
+              ? currentData[Symbol.iterator]()
+              : currentData[Symbol.asyncIterator](),
+          index: -1,
+        };
+        bListWeakMap.set(currentData, state);
+        // start
         yield BUFF_L;
         // dummy index
         path.push(-1);
-        bDataIteratorStack.push(
-          Symbol.iterator in currentData
-            ? currentData[Symbol.iterator]()
-            : currentData[Symbol.asyncIterator]()
-        );
       }
-      const currentIterator = bDataIteratorStack.at(-1) as BDataIterator;
+      const currentIterator = state.iterator;
       // get current value
       const { value, done } = await currentIterator.next();
       // done
       if (done) {
         path.pop();
-        listIndexWeakMap.delete(currentData);
+        bListWeakMap.delete(currentData);
         dataStack.pop();
-        bDataIteratorStack.pop();
         yield BUFF_E;
         continue;
       }
       // not done
-      const index = prevIndex + 1;
-      listIndexWeakMap.set(currentData, index);
+      state.index = state.index + 1;
       path.pop();
-      path.push(index);
+      path.push(state.index);
       if (hookSystem) {
         const hook = hookSystem.get(path);
         hook && hook(encoder(value));
@@ -235,9 +248,7 @@ function isBObject(
 
 function isBDictionaryEntries(
   data: BList<false>,
-  sortedDictionaryIterableWeakSet: WeakSet<Iterable<BDictionaryEntry>>
+  bDictionaryWeakMap: WeakMap<Iterable<BDictionaryEntry>, BDictionaryState>
 ): data is Iterable<BDictionaryEntry> {
-  return sortedDictionaryIterableWeakSet.has(
-    data as Iterable<BDictionaryEntry>
-  );
+  return bDictionaryWeakMap.has(data as Iterable<BDictionaryEntry>);
 }
