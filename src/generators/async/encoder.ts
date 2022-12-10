@@ -17,7 +17,8 @@ type BDictionaryEntry = [BByteString<false>, BData<false>];
  * encoder hook
  */
 export type EncoderHook = (
-  asyncIterable: AsyncIterable<Uint8Array>
+  asyncIterable: AsyncIterable<Uint8Array>,
+  value: BData<false>
 ) => void | Promise<void>;
 
 /**
@@ -190,7 +191,7 @@ export async function* encoder(
         path.push(k);
         if (hookSystem) {
           const hook = hookSystem.get(path);
-          hook && hook(encoder(v));
+          hook && hook(encoder(v), v);
         }
       }
       dataStack.push(v, k);
@@ -232,7 +233,7 @@ export async function* encoder(
       path.push(state.index);
       if (hookSystem) {
         const hook = hookSystem.get(path);
-        hook && hook(encoder(value));
+        hook && hook(encoder(value), value);
       }
       dataStack.push(value);
       continue;
