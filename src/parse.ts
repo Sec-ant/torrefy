@@ -7,6 +7,7 @@ import {
   isDigitByte,
 } from "./utils/codec.js";
 import { Token } from "./generators/async/tokenizer.js";
+import { textCodecs } from "./utils/misc.js";
 
 export async function parse(
   tokenAsyncIterable: AsyncIterable<Token>
@@ -181,6 +182,6 @@ function parseInteger(tokenValue: Uint8Array) {
 }
 
 function parseByteString(tokenValue: Uint8Array) {
-  const textDecoder = new TextDecoder();
+  const textDecoder = (textCodecs.decoder ??= new TextDecoder());
   return textDecoder.decode(tokenValue);
 }

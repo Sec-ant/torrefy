@@ -10,6 +10,7 @@ import {
   BUFF_E,
   BUFF_L,
 } from "../../utils/codec.js";
+import { textCodecs } from "../../utils/misc.js";
 
 type BDictionaryEntry = [BByteString<false>, BData<false>];
 
@@ -57,8 +58,8 @@ export async function* encoder(
   data: BData<false>,
   { hookSystem }: EncoderOptions = {}
 ) {
-  const textEncoder = new TextEncoder();
-  const textDecoder = new TextDecoder();
+  const textEncoder = (textCodecs.encoder ??= new TextEncoder());
+  const textDecoder = (textCodecs.decoder ??= new TextDecoder());
   const path: (EncoderHookPath extends Iterable<infer PathElement>
     ? PathElement
     : never)[] = [];
