@@ -644,14 +644,14 @@ async function createV2(
   // Piece length cannot be smaller than block length in v2 torrents
   // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=of%20two%20and-,at%20least%2016KiB,-.
   if (iOpts.pieceLength < iOpts.blockLength) {
-    throw new Error(
-      `piece length ${iOpts.pieceLength} is smaller than block length ${iOpts.blockLength}`
+    throw new RangeError(
+      `Piece length ${iOpts.pieceLength} is smaller than block length ${iOpts.blockLength}`
     );
   }
   // Piece length must be a power of two in v2 torrents.
   // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=It%20must%20be%20a%20power%20of%20two
   if ((iOpts.pieceLength & (iOpts.pieceLength - 1)) !== 0) {
-    throw new Error(`piece length ${iOpts.pieceLength} is not a power of 2`);
+    throw new RangeError(`Piece length ${iOpts.pieceLength} is not a power of 2`);
   }
   // calculate blocks per piece
   const blocksPerPiece = iOpts.pieceLength / iOpts.blockLength;
@@ -751,14 +751,14 @@ async function createHybrid(
   // Piece length cannot be smaller than block length in hybrid torrents
   // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=of%20two%20and-,at%20least%2016KiB,-.
   if (iOpts.pieceLength < iOpts.blockLength) {
-    throw new Error(
-      `piece length ${iOpts.pieceLength} is smaller than block length ${iOpts.blockLength}`
+    throw new RangeError(
+      `Piece length ${iOpts.pieceLength} is smaller than block length ${iOpts.blockLength}`
     );
   }
   // Piece length must be a power of two in hybrid torrents.
   // https://www.bittorrent.org/beps/bep_0052.html#upgrade-path:~:text=It%20must%20be%20a%20power%20of%20two
   if ((iOpts.pieceLength & (iOpts.pieceLength - 1)) !== 0) {
-    throw new Error(`piece length ${iOpts.pieceLength} is not a power of 2`);
+    throw new RangeError(`Piece length ${iOpts.pieceLength} is not a power of 2`);
   }
   // calculate blocks per piece
   const blocksPerPiece = iOpts.pieceLength / iOpts.blockLength;

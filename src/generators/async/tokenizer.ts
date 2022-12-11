@@ -187,7 +187,10 @@ export async function* tokenizer(
         }
         // program shouldn't reach here
         else {
-          throw new Error("This is a bug");
+          const exhaustiveCheck: never = token;
+          throw new Error(
+            `Unhandled token: ${JSON.stringify(exhaustiveCheck)}`
+          );
         }
       }
       // process byte length
@@ -226,7 +229,7 @@ export async function* tokenizer(
       }
       // program shouldn't reach here
       else {
-        throw new Error("This is a bug");
+        throw new Error("Unexpected state transition");
       }
     }
   }

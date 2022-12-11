@@ -116,7 +116,7 @@ export async function parse(
     }
   }
   if (contextStack.length) {
-    throw new Error(`Unexpected end of token stream`);
+    throw new SyntaxError(`Unexpected end of token stream`);
   }
   return parsedResult;
 }

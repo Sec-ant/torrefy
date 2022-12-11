@@ -97,7 +97,7 @@ export function getTimeStampSecondsNow() {
  */
 export async function merkleRoot(leaves: Uint8Array[]): Promise<Uint8Array> {
   if (leaves.length === 0) {
-    throw new Error("Empty leaves");
+    throw new TypeError("Empty leaves");
   }
   const content = new Uint8Array(64);
   while (leaves.length > 1) {

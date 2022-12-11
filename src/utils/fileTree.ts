@@ -322,7 +322,7 @@ export async function populateFileTree(
           !registeredHandle ||
           !(await fileDirLike.isSameEntry(registeredHandle));
         if (isUnregistered) {
-          throw new Error("File system handle not match");
+          throw new Error("A same name directory already exists");
         }
       }
       // no matched directory entry is found
@@ -510,7 +510,7 @@ export async function populateFileTree(
     }
     // unrecognized type
     else {
-      throw new Error("Unrecognized type of input");
+      throw new TypeError("Unrecognized type of input");
     }
   }
   // NOTE: TYPE MUTATION!
