@@ -7,7 +7,7 @@ import {
   isDigitByte,
 } from "./utils/codec.js";
 import { Token } from "./generators/async/tokenizer.js";
-import { textCodecs } from "./utils/misc.js";
+import { textCodecs } from "./noexports/textCodecs.js";
 
 export async function parse(
   tokenAsyncIterable: AsyncIterable<Token>

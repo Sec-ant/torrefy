@@ -10,7 +10,7 @@ import {
   BUFF_E,
   BUFF_L,
 } from "../../utils/codec.js";
-import { textCodecs } from "../../utils/misc.js";
+import { textCodecs } from "../../noexports/textCodecs.js";
 
 type BDictionaryEntry = [BByteString<false>, BData<false>];
 

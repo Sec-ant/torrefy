@@ -126,11 +126,3 @@ export async function merkleRoot(leaves: Uint8Array[]): Promise<Uint8Array> {
   }
   return leaves[0] as Uint8Array;
 }
-
-export const textCodecs: {
-  encoder: TextEncoder | undefined;
-  decoder: TextDecoder | undefined;
-} = {
-  encoder: undefined,
-  decoder: undefined,
-};
