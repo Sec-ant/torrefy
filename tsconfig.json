@@ -1,20 +1,26 @@
 {
   "compilerOptions": {
     "target": "ESNext",
+    "useDefineForClassFields": true,
     "module": "ESNext",
     "moduleResolution": "NodeNext",
     "types": ["wicg-file-system-access"],
     "allowJs": true,
     "outDir": "dist",
     "declaration": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
     "esModuleInterop": true,
+    "emitDeclarationOnly": true,
+    "declarationDir": "dist",
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitAny": true,
     "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
     "skipLibCheck": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["dist", "test"]
+  "include": ["src"]
 }

@@ -10,5 +10,12 @@
     "plugin:@typescript-eslint/recommended",
     "plugin:@typescript-eslint/recommended-requiring-type-checking"
   ],
-  "ignorePatterns": ["dist/**/*", "node_modules/**/*", "webpack.config.js"]
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "tests",
+    "main.ts",
+    "vite.config.ts",
+    "tailwind.config.cjs"
+  ]
 }

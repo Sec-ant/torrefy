@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg'/%3e"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <title>Torrefy</title>
+  </head>
+  <body>
+    <h1 class="p-6 text-4xl font-mono font-extralight text-center">
+      Torrefy Test Page
+    </h1>
+    <hr />
+    <div class="p-6 pl-20 pr-20 grid grid-cols-3 gap-4">
+      <div class="text-sm p-2 rounded-lg shadow-md flex flex-col space-y-3">
+        <h4
+          class="text-lg font-mono font-black hover:text-blue-600 cursor-pointer"
+        >
+          <a href="https://developer.mozilla.org/docs/Web/API/File_API"
+            >File API</a
+          >
+        </h4>
+        <div class="flex flex-col space-y-1">
+          <label for="single-file-input" class="after:content-[':_'] font-mono"
+            >Single File Input</label
+          >
+          <input
+            class="focus:outline-none cursor-pointer"
+            id="single-file-input"
+            type="file"
+          />
+        </div>
+        <div class="flex flex-col space-y-1">
+          <label for="multi-file-input" class="after:content-[':_'] font-mono"
+            >Multi File Input</label
+          >
+          <input
+            class="focus:outline-none cursor-pointer"
+            id="multi-file-input"
+            type="file"
+            multiple
+          />
+        </div>
+        <div class="flex flex-col space-y-1">
+          <label
+            for="webkitdirectory-file-input"
+            class="after:content-[':_'] font-mono"
+            >Webkitdirectory File Input</label
+          >
+          <input
+            class="focus:outline-none cursor-pointer"
+            id="webkitdirectory-file-input"
+            type="file"
+            webkitdirectory
+          />
+        </div>
+      </div>
+      <div class="text-sm p-2 rounded-lg shadow-md flex flex-col space-y-3">
+        <h4
+          class="text-lg font-mono font-black hover:text-blue-600 cursor-pointer"
+        >
+          <a
+            href="https://developer.mozilla.org/docs/Web/API/File_and_Directory_Entries_API"
+            >File System Entries API</a
+          >
+        </h4>
+        <div class="flex flex-col space-y-1"></div>
+        <div class="flex flex-col space-y-1"></div>
+        <div class="flex flex-col space-y-1"></div>
+      </div>
+    </div>
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

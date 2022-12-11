@@ -10,9 +10,11 @@
     "./dist/**/*.js"
   ],
   "exports": {
-    "import": "./dist/index.js",
-    "browser": "./dist/index.umd.js",
-    "default": "./dist/index.js"
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.umd.js",
+      "default": "./dist/index.js"
+    }
   },
   "repository": {
     "type": "git",
@@ -38,33 +40,37 @@
   "scripts": {
     "clean": "rm -fr ./dist/*.*s",
     "lint": "eslint ./src",
-    "build": "npm run lint && npm run clean && webpack",
-    "serve": "http-server -c-1 dist",
+    "dev": "vite",
+    "build": "npm run lint && npm run clean && tsc && vite build",
+    "coverage": "vitest run --coverage",
+    "test": "npm run build && vitest",
+    "test:ui": "npm run build && vitest --ui",
     "docs": "typedoc --plugin typedoc-plugin-markdown ./src/index.ts"
   },
   "devDependencies": {
     "@types/uuid": "^9.0.0",
     "@types/wicg-file-system-access": "^2020.9.5",
-    "@typescript-eslint/eslint-plugin": "^5.45.1",
-    "@typescript-eslint/parser": "^5.45.1",
+    "@typescript-eslint/eslint-plugin": "^5.46.0",
+    "@typescript-eslint/parser": "^5.46.0",
+    "@vitest/coverage-c8": "^0.25.7",
+    "@vitest/ui": "^0.25.7",
     "eslint": "^8.29.0",
     "http-server": "^14.1.1",
     "mocha": "^10.1.0",
-    "prettier": "^2.8.0",
+    "prettier": "^2.8.1",
+    "puppeteer": "^19.4.0",
     "ts-loader": "^9.4.2",
     "tslib": "^2.4.1",
     "typedoc": "^0.23.21",
     "typedoc-plugin-markdown": "^3.14.0",
-    "typescript": "^4.9.3",
-    "vite": "^3.2.5",
-    "webpack": "^5.75.0",
-    "webpack-cli": "^5.0.1"
+    "typescript": "^4.9.4",
+    "vite": "^4.0.0",
+    "vitest": "^0.25.7"
   },
   "dependencies": {
     "@sec-ant/readable-stream": "^0.1.0",
     "jssha": "github:Sec-ant/jsSHA#dd69d437ee912b95007a330f9afec7635f83271e",
-    "uuid": "^9.0.0",
-    "workbox-streams": "^6.5.4"
+    "uuid": "^9.0.0"
   },
   "peerDependencies": {
     "@sec-ant/trie-map": "^1.1.5"
