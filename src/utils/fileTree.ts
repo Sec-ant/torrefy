@@ -252,9 +252,6 @@ export async function populateFileTree(
   // flag: should deep pack
   let shouldDeepPack = false;
   while (fileDirLikeIteratorStack.length) {
-    await new Promise<void>((resolve) => {
-      setTimeout(() => resolve(), 1000);
-    });
     // peek last member of the stack
     const currentDirEntry = dirEntryStack.at(-1) as FileTreeDirEntry;
     const currentFileDirLikeIterator = fileDirLikeIteratorStack.at(
